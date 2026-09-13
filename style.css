@@ -18,6 +18,7 @@
 .ranking-open{width:100%;margin:4px 0 12px}.ranking-dialog{width:min(94vw,460px);max-height:85dvh;overflow:auto;color:#edf4ff;background:#0b1e35;border:1px solid #7897b8;border-radius:16px;padding:18px}
 .ranking-dialog::backdrop{background:#000b}.ranking-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}.ranking-heading h2{font-size:20px;margin:0}
 .ranking-content{min-height:70px;font-size:14px;overflow-wrap:anywhere}.ranking-content table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}.ranking-content th,.ranking-content td{padding:10px 4px;border-bottom:1px solid #42628455;text-align:center}.ranking-content th{color:#aabed8;font-size:12px}.ranking-content td:nth-child(2){text-align:left;max-width:150px;word-break:break-word}.ranking-content tbody tr:first-child{color:#ffe09a}.ranking-refresh{margin-top:14px;width:100%}
+.ranking-note{margin:0 0 8px;color:#ffe09a;font-size:12px}
 
 /* Approved six-panel storyboard, shown through six image viewports. */
 .story-art{width:100%;aspect-ratio:768/348;background-image:url('storyboard.png');background-size:200% 294.25%;background-repeat:no-repeat;background-color:#061127}
