@@ -56,4 +56,9 @@ header,footer{padding-left:max(18px,env(safe-area-inset-left));padding-right:max
 #overlay{align-items:safe center;justify-content:center;background:#030b19c9}
 #overlay .panel{width:min(100%,420px);margin-inline:auto}
 .start-panel .primary{position:sticky;bottom:0;z-index:2}
+/* P2: keep primary CTA visible while overlay scrolls */
+#overlay .panel{display:flex;flex-direction:column;max-height:min(85dvh,920px)}
+#overlay .panel .primary,#overlay .panel #retry,#overlay .panel #continue-max{position:sticky;bottom:0;z-index:3;margin-top:auto;box-shadow:0 -12px 24px #030b19ee}
+#overlay .panel .upgrade-list{max-height:28dvh;overflow:auto}
+
 .keyboard{font-size:13px;color:#c5d6ef}
