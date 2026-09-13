@@ -23,7 +23,7 @@ class BaseballGame {
  const early=n<=4;
  const windupT=early?(type==='fire'?1.25:1.05):(this.fury?.65:.8);
  const aimSpan=early?120:40;
- this.windup={pattern,type,t:windupT,early,tx:Math.max(85,Math.min(395,this.player.x+(this.random()-.5)*aimSpan))};
+ this.windup={pattern,type,t:windupT,duration:windupT,early,tx:Math.max(85,Math.min(395,this.player.x+(this.random()-.5)*aimSpan))};
  this.emit('windup',{pitch:type,pattern});
  }
  throwBall(){

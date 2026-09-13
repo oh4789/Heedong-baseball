@@ -1,5 +1,5 @@
 'use strict';
-const $=s=>document.querySelector(s),canvas=$('#field'),ctx=canvas.getContext('2d'),game=new BaseballGame(),bg=new Image(),pitcher=new Image(),batter=new Image();const W=480,H=850;let previous=0,visualTime=0,pointer=null,aim={x:0,y:0},keys={},effects=[],freeze=0,shake=0,feedbackTime=0,callTime=0,flash=0,muted=false,audio=null,pitchPoseTime=0,bossImpact=0,assetsReady=false;
+const $=s=>document.querySelector(s),canvas=$('#field'),ctx=canvas.getContext('2d'),game=new BaseballGame(),bg=new Image(),pitcher=new Image(),batter=new Image();const pitchPoses={idle:new Image(),windup:new Image(),arm_swing:new Image(),release:new Image(),follow:new Image()};let pitchPosesReady=false;const W=480,H=850;let previous=0,visualTime=0,pointer=null,aim={x:0,y:0},keys={},effects=[],freeze=0,shake=0,feedbackTime=0,callTime=0,flash=0,muted=false,audio=null,pitchPoseTime=0,bossImpact=0,assetsReady=false;
 let recordStorage;try{recordStorage=window.localStorage}catch{}
 const records=new BaseballRecords(recordStorage);let matchRecordStart={...records.data};
 function recordsHtml(showNew=false){
@@ -39,13 +39,26 @@ canvas.addEventListener('pointerdown',e=>{if(game.state!=='playing'||pointer)ret
 addEventListener('keydown',e=>{if(!$('#cinematic').classList.contains('hidden')||e.target?.closest?.('input,textarea,dialog,button'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys[e.key.toLowerCase()]=true;if(e.code==='Space'&&!e.repeat){activateAudio();game.swing();processEvents()}if(e.key==='Escape'&&!e.repeat)pause()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{if(game.state==='playing')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&game.state==='playing')pause()});
 function processEvents(){for(const e of game.events.splice(0)){sound(e.type);if(e.type==='perfect'){records.update(game.stage,game.perfects);say('PERFECT!','#fff2a5');burst(e.x,e.y,'#ffe491',24);freeze=.045;shake=.12}else if(e.type==='hit'){say('NICE HIT','#b5f3d2');burst(e.x,e.y,'#b5f3d2',12)}else if(e.type==='whiff')say('헛스윙','#b8cccc',.45);else if(e.type==='lastStand'){say('끝까지 버티기! · 체력 1','#a7ffe3',1.3);burst(game.player.x,game.player.y,'#a7ffe3',24)}else if(e.type==='damage'){say('피격!','#ff9a84');flash=.18;shake=.16;burst(e.x,e.y,'#ff997d');}else if(e.type==='windup'){$('#pitchcall').innerHTML='<span>'+({double:'연속 직구 · 두 번 받아치세요',changeFast:'체인지업 → 직구 · 기다렸다 두 번!',slider:'슬라이더 · 휘는 공을 따라가세요'}[e.pattern]||(e.pitch==='fire'?'⚠ 불꽃 마구 · 회피':e.pitch==='slow'?'체인지업 · 기다리세요':'직구 · 받아치세요'))+'</span>';$('#pitchcall').style.color=e.pitch==='fire'?'#ffab88':e.pitch==='slow'?'#a5e7ff':'#f4eacb';callTime=4}else if(e.type==='pitch'){pitchPoseTime=.55}else if(e.type==='twin'){say('희원이의 도움!','#d9b5ff',1.1);burst(240,250,'#d59cff',22)}else if(e.type==='impact'){bossImpact=.2;burst(240,280,e.perfect?'#ffdb82':'#c3efd3',18)}else if(e.type==='rally'){say('RALLY x'+e.count+' · 홈런 찬스!','#ffe38c',1.1);burst(240,280,'#ffb84d',32);freeze=.06;shake=.24}else if(e.type==='reaction'){say(e.line,'#d3e8ff',1.15)}else if(e.type==='fury')say('승부는 지금부터!','#ffd18b',1.2);else if(e.type==='end')end()}hud()}
 function ball(x,y,r,color,fire=false){ctx.save();ctx.translate(x,y);if(fire){ctx.fillStyle='#f8773766';ctx.beginPath();ctx.moveTo(-r,0);ctx.lineTo(-r*.6,-r*3.2);ctx.lineTo(0,-r*1.6);ctx.lineTo(r*.6,-r*3.8);ctx.lineTo(r,0);ctx.fill()}ctx.shadowColor=color;ctx.shadowBlur=fire?15:7;ctx.fillStyle=color;ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle=fire?'#6d260d':'#ba5a51';ctx.lineWidth=1.7;ctx.beginPath();ctx.arc(-r*.8,0,r*.7,-1.1,1.1);ctx.stroke();ctx.beginPath();ctx.arc(r*.8,0,r*.7,2.05,4.25);ctx.stroke();ctx.restore()}
-function drawPitcher(){
- // Reuse the approved scene's clean upper field. Its HUD and batter are outside this source rectangle.
- // This pose is an illustration; pitch timing is communicated by the live ball and release cue.
- if(pitcher.complete&&pitcher.naturalWidth){
-  ctx.drawImage(pitcher,0,143,941,592,0,116,480,302);
-  const fade=ctx.createLinearGradient(0,405,0,437);fade.addColorStop(0,'#18362900');fade.addColorStop(.5,'#18362966');fade.addColorStop(1,'#18362900');ctx.fillStyle=fade;ctx.fillRect(0,405,480,32);
+function currentPitchPose(){
+ if(game.windup){
+  const dur=game.windup.duration||game.windup.t||1;
+  const remain=Math.max(0,game.windup.t)/dur;
+  return remain<=0.3?'arm_swing':'windup';
  }
+ if(pitchPoseTime>0.45)return 'release';
+ if(pitchPoseTime>0)return 'follow';
+ return 'idle';
+}
+function drawPitcher(){
+ // Pose frames are crop-ready 941×592 (same camera as friend-stage upper field). Fallback to friend-stage crop.
+ const pose=currentPitchPose();
+ const frame=pitchPosesReady?pitchPoses[pose]:null;
+ if(frame&&frame.complete&&frame.naturalWidth){
+  ctx.drawImage(frame,0,0,941,592,0,116,480,302);
+ }else if(pitcher.complete&&pitcher.naturalWidth){
+  ctx.drawImage(pitcher,0,143,941,592,0,116,480,302);
+ }
+ const fade=ctx.createLinearGradient(0,405,0,437);fade.addColorStop(0,'#18362900');fade.addColorStop(.5,'#18362966');fade.addColorStop(1,'#18362900');ctx.fillStyle=fade;ctx.fillRect(0,405,480,32);
  if(bossImpact>0){ctx.strokeStyle='#ffe3a1';ctx.globalAlpha=bossImpact*3;ctx.lineWidth=2;ctx.beginPath();ctx.arc(240,290,18+(1-bossImpact/.2)*20,0,7);ctx.stroke();ctx.globalAlpha=1}
 }
 function drawBatter(){
@@ -97,4 +110,16 @@ function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;vis
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'read_baseball_game',description:'Read the current baseball parry match state.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({state:game.state,health:game.hp,bossHealth:game.boss,perfects:game.perfects,combo:game.combo,seconds:Math.floor(game.time)})})).catch(()=>{})}catch{}}
 
 function loadAsset(img,url){return new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error(url));img.src=url})}
-Promise.all([loadAsset(bg,'stadium-friend.png'),loadAsset(pitcher,'friend-stage.png'),loadAsset(batter,'batter-10.png'),loadAsset(new Image(),'storyboard.png')]).then(()=>{assetsReady=true;$('#start').disabled=false;$('#start').innerHTML='플레이 볼 <span>→</span>';playCinematic()}).catch(()=>{$('#start').disabled=false;$('#start').textContent='다시 불러오기';$('#start').onclick=()=>location.reload();$('#loadnote').textContent='이미지를 불러오지 못했어요. 다시 시도해 주세요.'});
+function loadAssetSoft(img,url){return new Promise(resolve=>{img.onload=()=>resolve(true);img.onerror=()=>resolve(false);img.src=url})}
+const coreAssets=[loadAsset(bg,'stadium-friend.png'),loadAsset(pitcher,'friend-stage.png'),loadAsset(batter,'batter-10.png'),loadAsset(new Image(),'storyboard.png')];
+const poseAssets=[
+ loadAssetSoft(pitchPoses.idle,'assets/pitcher/heedong-idle.png'),
+ loadAssetSoft(pitchPoses.windup,'assets/pitcher/heedong-windup.png'),
+ loadAssetSoft(pitchPoses.arm_swing,'assets/pitcher/heedong-arm_swing.png'),
+ loadAssetSoft(pitchPoses.release,'assets/pitcher/heedong-release.png'),
+ loadAssetSoft(pitchPoses.follow,'assets/pitcher/heedong-follow.png')
+];
+Promise.all(coreAssets).then(()=>Promise.all(poseAssets)).then(flags=>{
+ pitchPosesReady=flags.every(Boolean);
+ assetsReady=true;$('#start').disabled=false;$('#start').innerHTML='플레이 볼 <span>→</span>';playCinematic();
+}).catch(()=>{$('#start').disabled=false;$('#start').textContent='다시 불러오기';$('#start').onclick=()=>location.reload();$('#loadnote').textContent='이미지를 불러오지 못했어요. 다시 시도해 주세요.'});
