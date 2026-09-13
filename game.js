@@ -1,5 +1,5 @@
 'use strict';
-const $=s=>document.querySelector(s),canvas=$('#field'),ctx=canvas.getContext('2d'),game=new BaseballGame(),bg=new Image(),pitcher=new Image(),batter=new Image();const pitchPoses={idle:new Image(),windup:new Image(),arm_swing:new Image(),release:new Image(),follow:new Image()};let pitchPosesReady=false;const W=480,H=850;let previous=0,visualTime=0,pointer=null,aim={x:0,y:0},keys={},effects=[],freeze=0,shake=0,feedbackTime=0,callTime=0,flash=0,muted=false,audio=null,pitchPoseTime=0,bossImpact=0,assetsReady=false;
+const $=s=>document.querySelector(s),canvas=$('#field'),ctx=canvas.getContext('2d'),game=new BaseballGame(),bg=new Image(),pitcher=new Image(),batter=new Image();const pitchPoses={idle:new Image(),windup:new Image(),arm_swing:new Image(),release:new Image(),follow:new Image()};let pitchPosesReady=false;const batterPoses={ready:new Image(),load:new Image(),swing:new Image(),contact:new Image(),follow:new Image()};let batterPosesReady=0;const W=480,H=850;let previous=0,visualTime=0,pointer=null,aim={x:0,y:0},keys={},effects=[],freeze=0,shake=0,feedbackTime=0,callTime=0,flash=0,muted=false,audio=null,pitchPoseTime=0,bossImpact=0,assetsReady=false;
 let recordStorage;try{recordStorage=window.localStorage}catch{}
 const records=new BaseballRecords(recordStorage);let matchRecordStart={...records.data};
 function recordsHtml(showNew=false){
@@ -61,14 +61,29 @@ function drawPitcher(){
  const fade=ctx.createLinearGradient(0,405,0,437);fade.addColorStop(0,'#18362900');fade.addColorStop(.5,'#18362966');fade.addColorStop(1,'#18362900');ctx.fillStyle=fade;ctx.fillRect(0,405,480,32);
  if(bossImpact>0){ctx.strokeStyle='#ffe3a1';ctx.globalAlpha=bossImpact*3;ctx.lineWidth=2;ctx.beginPath();ctx.arc(240,290,18+(1-bossImpact/.2)*20,0,7);ctx.stroke();ctx.globalAlpha=1}
 }
+function currentBatterPose(){
+ if(game.swingAnim<=0)return 'ready';
+ const progress=1-game.swingAnim/.21;
+ if(progress<0.2)return 'load';
+ if(progress<0.45)return 'swing';
+ if(progress<0.7)return 'contact';
+ return 'follow';
+}
 function drawBatter(){
  const p=game.player;
  ctx.save();ctx.translate(p.x,p.y);
  if(game.inv>0&&Math.floor(game.inv*12)%2)ctx.globalAlpha=.4;
  ctx.fillStyle='#02091455';ctx.beginPath();ctx.ellipse(-20,102,40,9,0,0,7);ctx.fill();
- const progress=game.swingAnim>0?1-game.swingAnim/.21:0;
- ctx.translate(-42,37);ctx.rotate(game.swingAnim>0?Math.sin(progress*Math.PI)*.12:0);
- if(batter.complete&&batter.naturalWidth)ctx.drawImage(batter,-96,-130,173,220);
+ ctx.translate(-42,37);
+ const pose=currentBatterPose();
+ const frame=batterPoses[pose];
+ if(frame&&frame.naturalWidth){
+  ctx.drawImage(frame,0,0,frame.naturalWidth,frame.naturalHeight,-96,-130,173,220);
+ }else if(batter.complete&&batter.naturalWidth){
+  const progress=game.swingAnim>0?1-game.swingAnim/.21:0;
+  ctx.rotate(game.swingAnim>0?Math.sin(progress*Math.PI)*.12:0);
+  ctx.drawImage(batter,-96,-130,173,220);
+ }
  ctx.restore();
 }
 function draw(){
@@ -117,10 +132,17 @@ const poseAssets=[
  loadAssetSoft(pitchPoses.windup,'assets/pitcher/heedong-windup.png'),
  loadAssetSoft(pitchPoses.arm_swing,'assets/pitcher/heedong-arm_swing.png'),
  loadAssetSoft(pitchPoses.release,'assets/pitcher/heedong-release.png'),
- loadAssetSoft(pitchPoses.follow,'assets/pitcher/heedong-follow.png')
+ loadAssetSoft(pitchPoses.follow,'assets/pitcher/heedong-follow.png'),
+ loadAssetSoft(batterPoses.ready,'assets/batter/batter-ready.png'),
+ loadAssetSoft(batterPoses.load,'assets/batter/batter-load.png'),
+ loadAssetSoft(batterPoses.swing,'assets/batter/batter-swing.png'),
+ loadAssetSoft(batterPoses.contact,'assets/batter/batter-contact.png'),
+ loadAssetSoft(batterPoses.follow,'assets/batter/batter-follow.png')
 ];
 Promise.all([Promise.all(coreAssets),Promise.all(poseAssets)]).then(([_,flags])=>{
- pitchPosesReady=flags.filter(Boolean).length;
+ pitchPosesReady=flags.slice(0,5).filter(Boolean).length;
+ batterPosesReady=flags.slice(5).filter(Boolean).length;
  assetsReady=true;$('#start').disabled=false;$('#start').innerHTML='플레이 볼 <span>→</span>';playCinematic();
- if(!flags.every(Boolean))console.warn('pitch poses partial',flags);
+ if(pitchPosesReady<5)console.warn('pitch poses partial',flags.slice(0,5));
+ if(batterPosesReady<5)console.warn('batter poses partial',flags.slice(5));
 }).catch(()=>{$('#start').disabled=false;$('#start').textContent='다시 불러오기';$('#start').onclick=()=>location.reload();$('#loadnote').textContent='이미지를 불러오지 못했어요. 다시 시도해 주세요.'});
