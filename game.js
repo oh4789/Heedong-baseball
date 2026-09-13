@@ -113,11 +113,11 @@ function loadAsset(img,url){return new Promise((resolve,reject)=>{img.onload=res
 function loadAssetSoft(img,url){return new Promise(resolve=>{const done=ok=>resolve(!!ok);if(img.complete&&img.naturalWidth)return done(true);img.onload=()=>done(true);img.onerror=()=>done(false);img.src=url})}
 const coreAssets=[loadAsset(bg,'stadium-friend.png'),loadAsset(pitcher,'friend-stage.png'),loadAsset(batter,'batter-10.png'),loadAsset(new Image(),'storyboard.png')];
 const poseAssets=[
- loadAssetSoft(pitchPoses.idle,'/assets/pitcher/heedong-idle.png'),
- loadAssetSoft(pitchPoses.windup,'/assets/pitcher/heedong-windup.png'),
- loadAssetSoft(pitchPoses.arm_swing,'/assets/pitcher/heedong-arm_swing.png'),
- loadAssetSoft(pitchPoses.release,'/assets/pitcher/heedong-release.png'),
- loadAssetSoft(pitchPoses.follow,'/assets/pitcher/heedong-follow.png')
+ loadAssetSoft(pitchPoses.idle,'assets/pitcher/heedong-idle.png'),
+ loadAssetSoft(pitchPoses.windup,'assets/pitcher/heedong-windup.png'),
+ loadAssetSoft(pitchPoses.arm_swing,'assets/pitcher/heedong-arm_swing.png'),
+ loadAssetSoft(pitchPoses.release,'assets/pitcher/heedong-release.png'),
+ loadAssetSoft(pitchPoses.follow,'assets/pitcher/heedong-follow.png')
 ];
 Promise.all([Promise.all(coreAssets),Promise.all(poseAssets)]).then(([_,flags])=>{
  pitchPosesReady=flags.filter(Boolean).length;
