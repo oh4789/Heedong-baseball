@@ -66,3 +66,30 @@ header,footer{padding-left:max(18px,env(safe-area-inset-left));padding-right:max
 .keyboard{font-size:13px;color:#c5d6ef}
 
 .panel-body .menu-art,.panel-body .result-art{margin-top:0}
+
+/* Fit UI to viewport — reduce forced scrolling */
+html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:hidden}
+#game{position:fixed;inset:0;width:100%;height:100%;height:100dvh}
+#field,canvas#field{position:absolute;inset:0;margin:0;width:100%!important;height:100%!important;max-width:none;max-height:none;aspect-ratio:auto}
+#overlay{padding:max(8px,env(safe-area-inset-top)) 12px max(8px,env(safe-area-inset-bottom));align-items:stretch;justify-content:center}
+#overlay .panel{width:min(100%,440px);max-height:100%;margin:auto;border-radius:16px}
+.start-panel .panel-body{overflow:hidden;display:flex;flex-direction:column;gap:0}
+.start-panel .menu-art{max-height:min(22vh,150px);flex:0 0 auto}
+.start-panel .rules{margin-bottom:6px}
+.start-panel .rules p{margin:4px 0}
+.start-panel .sub{margin-bottom:8px}
+.start-panel .personal-records{margin:6px 0;padding:8px}
+.start-panel .ranking-open{margin:2px 0 4px}
+.start-panel .intro-replay{min-height:36px;margin:2px auto 0}
+.start-panel .keyboard{margin:4px 0 0;font-size:11px}
+@media (max-height:760px){
+ .start-panel .menu-art{max-height:min(16vh,110px)}
+ .start-panel h1{font-size:clamp(22px,6vw,28px);margin:4px 0}
+ .start-panel .rules p{font-size:12px;margin:3px 0}
+ .result-art{max-height:72px}
+ .result-grid{margin:10px 0}
+}
+@media (max-height:640px){
+ .start-panel .menu-art,.start-panel .keyboard,.start-panel .intro-replay{display:none}
+ .start-panel .personal-records p{display:none}
+}
