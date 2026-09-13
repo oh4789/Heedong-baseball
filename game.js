@@ -43,7 +43,7 @@ function currentPitchPose(){
  if(game.windup){
   const dur=game.windup.duration||game.windup.t||1;
   const remain=Math.max(0,game.windup.t)/dur;
-  return remain<=0.3?'arm_swing':'windup';
+  return remain<=0.42?'arm_swing':'windup';
  }
  if(pitchPoseTime>0.45)return 'release';
  if(pitchPoseTime>0)return 'follow';
@@ -60,7 +60,7 @@ function drawPitcher(){
  }else if(pitcher.complete&&pitcher.naturalWidth){
   ctx.drawImage(pitcher,0,143,941,592,0,116,480,302);
  }
- const fade=ctx.createLinearGradient(0,405,0,437);fade.addColorStop(0,'#18362900');fade.addColorStop(.5,'#18362966');fade.addColorStop(1,'#18362900');ctx.fillStyle=fade;ctx.fillRect(0,405,480,32);
+ const fade=ctx.createLinearGradient(0,400,0,442);fade.addColorStop(0,'#18362900');fade.addColorStop(.45,'#18362988');fade.addColorStop(1,'#18362900');ctx.fillStyle=fade;ctx.fillRect(0,400,480,42);
  if(bossImpact>0){ctx.strokeStyle='#ffe3a1';ctx.globalAlpha=bossImpact*3;ctx.lineWidth=2;ctx.beginPath();ctx.arc(240,290,18+(1-bossImpact/.2)*20,0,7);ctx.stroke();ctx.globalAlpha=1}
 }
 function currentBatterPose(){
