@@ -55,10 +55,14 @@ header .top,header .boss-label,header .bar,header .meta,footer .scoreline,footer
 header,footer{padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right))}
 #overlay{align-items:safe center;justify-content:center;background:#030b19c9}
 #overlay .panel{width:min(100%,420px);margin-inline:auto}
-.start-panel .primary{position:sticky;bottom:0;z-index:2}
-/* P2: keep primary CTA visible while overlay scrolls */
-#overlay .panel{display:flex;flex-direction:column;max-height:min(85dvh,920px)}
-#overlay .panel .primary,#overlay .panel #retry,#overlay .panel #continue-max{position:sticky;bottom:0;z-index:3;margin-top:auto;box-shadow:0 -12px 24px #030b19ee}
-#overlay .panel .upgrade-list{max-height:28dvh;overflow:auto}
+/* P2: scrollable body + pinned CTA footer (overflow:hidden on .panel broke sticky) */
+#overlay .panel{display:flex;flex-direction:column;max-height:min(92dvh,820px);overflow:hidden;padding-bottom:0}
+#overlay .panel-body{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#overlay .panel-cta{flex:0 0 auto;position:relative;z-index:3;margin-top:0;padding:12px 0 max(12px,env(safe-area-inset-bottom));background:linear-gradient(180deg,#122b5200 0%,#122b52f2 28%,#0d1f3c 100%);box-shadow:0 -12px 24px #030b19cc}
+#overlay .panel-cta .primary,#overlay .panel-cta #retry,#overlay .panel-cta #continue-max,#overlay .panel-cta #resume{margin:0}
+#overlay .panel-cta .upgrade-title{margin-top:0}
+#overlay .panel-cta .upgrade-list{max-height:28dvh;overflow:auto;margin:0}
 
 .keyboard{font-size:13px;color:#c5d6ef}
+
+.panel-body .menu-art,.panel-body .result-art{margin-top:0}
