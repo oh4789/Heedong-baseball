@@ -13,12 +13,12 @@ function sound(kind){if(muted||!audio)return;try{const o=audio.createOscillator(
 function activateAudio(){try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume()}catch{}}
 function clearInput(){pointer=null;aim={x:0,y:0};keys={}}
 const cinematicScenes=[
- {name:'조용한 구장',line:'승부는 해 질 무렵 시작됐다.',sub:'오늘 상대는 친구, 희동이.',duration:2000,alt:'노을이 지는 야구장과 희동이를 이겨라 전광판'},
- {name:'희동이의 도발',line:'“내 공, 하나라도 제대로 쳐봐.”',sub:'희동이 · 자신만만한 첫 번째 투수',duration:3000,alt:'공을 내밀며 자신 있게 웃는 희동이'},
- {name:'배트를 잡다',line:'좋아. 어디 한번 던져봐.',sub:'장갑을 조이고, 공을 끝까지 본다.',duration:2000,alt:'10번 타자가 장갑을 낀 손으로 배트를 잡는 모습'},
- {name:'첫 번째 공',line:'딱! 제대로 받아쳤다.',sub:'이 정도면 할 만한데?',duration:3000,alt:'타자가 희동이의 첫 공을 받아치는 순간'},
- {name:'쌍둥이의 기습',line:'“잠깐, 둘이잖아?!”',sub:'당황한 타자 뒤로… “희원이의 도움!”',duration:3000,alt:'놀란 타자와 능청스럽게 협공하는 희동이 희원이 쌍둥이'},
- {name:'희동이를 이겨라',line:'희동이를 이겨라',sub:'쌍둥이의 마구, 네 배트로 받아쳐라.',duration:2000,alt:'보라색 마구와 쌍둥이가 등장하는 희동이를 이겨라 타이틀'}
+ {name:'조용한 구장',line:'오늘은… 좀 조용한데.',sub:'아무도 없다.',duration:2000,alt:'노을이 지는 야구장과 희동이를 이겨라 전광판'},
+ {name:'희동이의 도발',line:'“내 공, 하나라도 제대로 쳐봐.”',sub:'희동이의 도발.',duration:3000,alt:'공을 내밀며 자신 있게 웃는 희동이'},
+ {name:'배트를 잡다',line:'그래, 받아치지.',sub:'타석 입장.',duration:2000,alt:'10번 타자가 장갑을 낀 손으로 배트를 잡는 모습'},
+ {name:'첫 번째 공',line:'뭐야 이거—!',sub:'타자, 당황.',duration:3000,alt:'첫 공에 타이밍을 놓치고 당황하는 타자'},
+ {name:'쌍둥이의 기습',line:'희원이의 도움!',sub:'사전 경고 없음.',duration:3000,alt:'놀란 타자와 갑자기 협공하는 희동이 희원이 쌍둥이'},
+ {name:'희동이를 이겨라',line:'희동이를 이겨라',sub:'친구 승부, 지금 시작.',duration:2000,alt:'보라색 마구와 쌍둥이가 등장하는 희동이를 이겨라 타이틀'}
 ];
 const openingVideo=$('#opening-video');let cinematicFocus=null;
 function finishCinematic(){openingVideo.pause();$('#cinematic').classList.add('hidden');$('#overlay').inert=false;try{localStorage.setItem('beat-heedong.video-v1-seen','1')}catch{}(cinematicFocus||$('#start')).focus()}
