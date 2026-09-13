@@ -80,11 +80,11 @@ function drawBatter(){
  const pose=currentBatterPose();
  const frame=batterPoses[pose];
  if(frame&&frame.naturalWidth){
-  ctx.drawImage(frame,0,0,frame.naturalWidth,frame.naturalHeight,-96,-130,173,220);
+  ctx.drawImage(frame,0,0,frame.naturalWidth,frame.naturalHeight,-96,-148,173,220);
  }else if(batter.complete&&batter.naturalWidth){
   const progress=game.swingAnim>0?1-game.swingAnim/.21:0;
   ctx.rotate(game.swingAnim>0?Math.sin(progress*Math.PI)*.12:0);
-  ctx.drawImage(batter,-96,-130,173,220);
+  ctx.drawImage(batter,-96,-148,173,220);
  }
  ctx.restore();
 }
