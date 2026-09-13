@@ -70,7 +70,8 @@ header,footer{padding-left:max(18px,env(safe-area-inset-left));padding-right:max
 /* Fit UI to viewport — reduce forced scrolling */
 html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:hidden}
 #game{position:fixed;inset:0;width:100%;height:100%;height:100dvh}
-#field,canvas#field{position:absolute;inset:0;margin:0;width:100%!important;height:100%!important;max-width:none;max-height:none;aspect-ratio:auto}
+#field,canvas#field{position:absolute;inset:0;margin:auto;display:block;height:100%;width:auto;max-width:none;max-height:100%;aspect-ratio:480/850}
+@media (max-aspect-ratio:480/850){#field,canvas#field{width:100%;height:auto;max-height:100%}}
 #overlay{padding:max(8px,env(safe-area-inset-top)) 12px max(8px,env(safe-area-inset-bottom));align-items:stretch;justify-content:center}
 #overlay .panel{width:min(100%,440px);max-height:100%;margin:auto;border-radius:16px}
 .start-panel .panel-body{overflow:hidden;display:flex;flex-direction:column;gap:0}
@@ -92,4 +93,13 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 @media (max-height:640px){
  .start-panel .menu-art,.start-panel .keyboard,.start-panel .intro-replay{display:none}
  .start-panel .personal-records p{display:none}
+}
+
+/* P3b: result compact (keep panel-cta pin) */
+.panel-body .result-art{max-height:min(16dvh,110px)}
+.panel-body .result-grid{margin:10px 0}
+.panel-body .detail{margin:0 0 6px}
+.panel-body .share-record{margin:8px 0 4px;padding-top:6px}
+@media (max-height:640px){
+ .panel-body .result-art{display:none}
 }
