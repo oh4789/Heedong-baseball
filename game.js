@@ -52,9 +52,9 @@ function currentPitchPose(){
 function drawPitcher(){
  // Pose frames are crop-ready 941×592 (same camera as friend-stage upper field). Fallback to friend-stage crop.
  const pose=currentPitchPose();
- const frame=pitchPosesReady?pitchPoses[pose]:null;
- if(frame&&frame.complete&&frame.naturalWidth){
-  ctx.drawImage(frame,0,0,941,592,0,116,480,302);
+ const frame=pitchPoses[pose];
+ if(frame&&(frame.complete||frame.naturalWidth)&&frame.naturalWidth){
+  ctx.drawImage(frame,0,0,frame.naturalWidth,frame.naturalHeight,0,116,480,302);
  }else if(pitcher.complete&&pitcher.naturalWidth){
   ctx.drawImage(pitcher,0,143,941,592,0,116,480,302);
  }
@@ -110,16 +110,17 @@ function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;vis
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'read_baseball_game',description:'Read the current baseball parry match state.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({state:game.state,health:game.hp,bossHealth:game.boss,perfects:game.perfects,combo:game.combo,seconds:Math.floor(game.time)})})).catch(()=>{})}catch{}}
 
 function loadAsset(img,url){return new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error(url));img.src=url})}
-function loadAssetSoft(img,url){return new Promise(resolve=>{img.onload=()=>resolve(true);img.onerror=()=>resolve(false);img.src=url})}
+function loadAssetSoft(img,url){return new Promise(resolve=>{const done=ok=>resolve(!!ok);if(img.complete&&img.naturalWidth)return done(true);img.onload=()=>done(true);img.onerror=()=>done(false);img.src=url})}
 const coreAssets=[loadAsset(bg,'stadium-friend.png'),loadAsset(pitcher,'friend-stage.png'),loadAsset(batter,'batter-10.png'),loadAsset(new Image(),'storyboard.png')];
 const poseAssets=[
- loadAssetSoft(pitchPoses.idle,'assets/pitcher/heedong-idle.png'),
- loadAssetSoft(pitchPoses.windup,'assets/pitcher/heedong-windup.png'),
- loadAssetSoft(pitchPoses.arm_swing,'assets/pitcher/heedong-arm_swing.png'),
- loadAssetSoft(pitchPoses.release,'assets/pitcher/heedong-release.png'),
- loadAssetSoft(pitchPoses.follow,'assets/pitcher/heedong-follow.png')
+ loadAssetSoft(pitchPoses.idle,'/assets/pitcher/heedong-idle.png'),
+ loadAssetSoft(pitchPoses.windup,'/assets/pitcher/heedong-windup.png'),
+ loadAssetSoft(pitchPoses.arm_swing,'/assets/pitcher/heedong-arm_swing.png'),
+ loadAssetSoft(pitchPoses.release,'/assets/pitcher/heedong-release.png'),
+ loadAssetSoft(pitchPoses.follow,'/assets/pitcher/heedong-follow.png')
 ];
-Promise.all(coreAssets).then(()=>Promise.all(poseAssets)).then(flags=>{
- pitchPosesReady=flags.every(Boolean);
+Promise.all([Promise.all(coreAssets),Promise.all(poseAssets)]).then(([_,flags])=>{
+ pitchPosesReady=flags.filter(Boolean).length;
  assetsReady=true;$('#start').disabled=false;$('#start').innerHTML='플레이 볼 <span>→</span>';playCinematic();
+ if(!flags.every(Boolean))console.warn('pitch poses partial',flags);
 }).catch(()=>{$('#start').disabled=false;$('#start').textContent='다시 불러오기';$('#start').onclick=()=>location.reload();$('#loadnote').textContent='이미지를 불러오지 못했어요. 다시 시도해 주세요.'});
