@@ -200,6 +200,13 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 #overlay .panel-body::-webkit-scrollbar{width:6px}
 #overlay .panel-body::-webkit-scrollbar-thumb{background:#6087CA55;border-radius:4px}
 
+/* P2 QA: kill start-panel horizontal scrollbar (menu-art bleed / records grid) */
+#overlay .panel-body{overflow-x:hidden;overflow-y:auto;max-width:100%}
+#personal-records,.personal-records{max-width:100%;box-sizing:border-box;overflow-x:hidden}
+.record-values{width:100%;min-width:0;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.record-values>span{min-width:0;overflow-wrap:anywhere;word-break:keep-all}
+.start-panel .menu-art,.panel-body .result-art{max-width:none}
+
 /* META HUD polish v1 — equipped chip trophy mark */
 .title-chip.equipped::before{content:'🏆';font-size:13px;line-height:1;margin-right:2px}
 .ranking-dialog .ranking-tabs{border:1px solid #6087CA55}
