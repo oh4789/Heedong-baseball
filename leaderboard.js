@@ -177,7 +177,9 @@ const SharedRanking=(()=>{
     const data=await submitRecord(snapshot,nickname);
     submitted=true;input.disabled=true;button.textContent='등록 완료';
     if(score.daily&&typeof DailyMatch!=='undefined'&&DailyMatch.recordBoardEntry){
-     DailyMatch.recordBoardEntry({id:snapshot.id,nickname,stage:snapshot.stage,perfects:snapshot.perfects});
+     const sessionP=typeof DailyMatch.sessionPerfects==='number'?DailyMatch.sessionPerfects:null;
+     const boardPerfects=sessionP!=null?sessionP:snapshot.perfects;
+     DailyMatch.recordBoardEntry({id:snapshot.id,nickname,stage:snapshot.stage,perfects:boardPerfects});
     }
     status.textContent=data.source==='mock'
      ? data.nickname+' · 현재 '+data.rank+'위 (이 기기에만 저장)'

@@ -184,12 +184,15 @@ const DailyMatch=(()=>{
   const goal=goalForDay(today);
   const nickname=String(entry?.nickname||'').trim().slice(0,12);
   if(!nickname)return false;
+  // Prefer session-accumulated PERFECTS on active daily (continue segments); do not mutate session.
+  let perfects=Math.max(0,Number(entry?.perfects)||0);
+  if(activeDaily&&typeof sessionPerfects==='number'&&sessionPerfects>0)perfects=sessionPerfects;
   const row={
    id:entry.id||(typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():String(Date.now())),
    nickname,
    day:today,
    goalLabel:goal.label,
-   perfects:Math.max(0,Number(entry.perfects)||0),
+   perfects,
    stage:Math.max(0,Number(entry.stage)||0),
    created:Date.now()
   };
