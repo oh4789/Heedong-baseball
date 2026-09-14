@@ -2,12 +2,15 @@
 const SharedRanking=(()=>{
  const MOCK_KEY='baseball.leaderboard.mock.v1';
  const NICK_KEY='baseball.nickname';
+ let tab='all';
  const dialog=document.createElement('dialog');
  dialog.className='ranking-dialog';
- dialog.innerHTML='<div class="ranking-heading"><h2>친구들과 기록 대결</h2><button type="button" aria-label="랭킹 닫기">닫기</button></div><p>도달 스테이지순 · 동점이면 PERFECT순</p><p>등록한 승부별 기록 · TOP 20</p><p class="ranking-note" hidden></p><div class="ranking-content" aria-live="polite"></div><button type="button" class="ranking-refresh">새로고침</button>';
+ dialog.innerHTML='<div class="ranking-heading"><h2>친구들과 기록 대결</h2><button type="button" aria-label="랭킹 닫기">닫기</button></div><div class="ranking-tabs" role="tablist" aria-label="랭킹 범위"><button type="button" class="ranking-tab active" data-tab="all" role="tab" aria-selected="true">전체</button><button type="button" class="ranking-tab" data-tab="today" role="tab" aria-selected="false">오늘</button></div><p class="ranking-subcopy">도달 스테이지순 · 동점이면 PERFECT순</p><p class="ranking-topline">등록한 승부별 기록 · TOP 20</p><p class="ranking-note" hidden></p><div class="ranking-content" aria-live="polite"></div><button type="button" class="ranking-refresh">새로고침</button>';
  document.body.append(dialog);
  dialog.querySelector('.ranking-heading button').onclick=()=>dialog.close();
  const note=dialog.querySelector('.ranking-note');
+ const subcopy=dialog.querySelector('.ranking-subcopy');
+ const topline=dialog.querySelector('.ranking-topline');
 
  function readMock(){
   try{const raw=JSON.parse(localStorage.getItem(MOCK_KEY)||'[]');return Array.isArray(raw)?raw:[]}catch{return[]}
@@ -25,20 +28,55 @@ const SharedRanking=(()=>{
   if(text){note.hidden=false;note.textContent=text}
   else{note.hidden=true;note.textContent=''}
  }
+ function updateChrome(){
+  dialog.querySelectorAll('.ranking-tab').forEach(btn=>{
+   const on=btn.dataset.tab===tab;
+   btn.classList.toggle('active',on);
+   btn.setAttribute('aria-selected',String(on));
+  });
+  if(tab==='today'){
+   subcopy.textContent='오늘 시드 기준 · 목표 달성자만';
+   topline.textContent='오늘의 승부 클리어 · TOP 20';
+  }else{
+   subcopy.textContent='도달 스테이지순 · 동점이면 PERFECT순';
+   topline.textContent='등록한 승부별 기록 · TOP 20';
+  }
+ }
  function renderEntries(entries){
   const content=dialog.querySelector('.ranking-content');
-  if(!entries.length){content.textContent='아직 등록된 기록이 없어요. 첫 기록을 남겨보세요!';return}
+  if(!entries.length){
+   content.textContent=tab==='today'
+    ?'아직 오늘의 기록이 없어요. 한 판 뛰고 이름을 남겨 보세요.'
+    :'아직 등록된 기록이 없어요. 첫 기록을 남겨보세요!';
+   return;
+  }
   const table=document.createElement('table');
-  table.innerHTML='<thead><tr><th>순위</th><th>닉네임</th><th>도달</th><th>PERFECT</th></tr></thead>';
-  const body=document.createElement('tbody');
-  entries.forEach(entry=>{
-   const row=document.createElement('tr');
-   [entry.rank,entry.nickname,entry.stage,entry.perfects].forEach(value=>{
-    const cell=document.createElement('td');cell.textContent=String(value);row.append(cell);
+  if(tab==='today'){
+   const goalKind=(typeof DailyMatch!=='undefined'&&DailyMatch.todayGoal)?DailyMatch.todayGoal().kind:'perfect';
+   const third=goalKind==='stage'?'도달':'PERFECT';
+   table.innerHTML='<thead><tr><th>순위</th><th>닉네임</th><th>목표</th><th>'+third+'</th></tr></thead>';
+   const body=document.createElement('tbody');
+   entries.forEach(entry=>{
+    const row=document.createElement('tr');
+    const thirdVal=goalKind==='stage'?(entry.stage??'-'):(entry.perfects??'-');
+    [entry.rank,entry.nickname,entry.goalLabel||'-',thirdVal].forEach(value=>{
+     const cell=document.createElement('td');cell.textContent=String(value);row.append(cell);
+    });
+    body.append(row);
    });
-   body.append(row);
-  });
-  table.append(body);content.replaceChildren(table);
+   table.append(body);content.replaceChildren(table);
+  }else{
+   table.innerHTML='<thead><tr><th>순위</th><th>닉네임</th><th>도달</th><th>PERFECT</th></tr></thead>';
+   const body=document.createElement('tbody');
+   entries.forEach(entry=>{
+    const row=document.createElement('tr');
+    [entry.rank,entry.nickname,entry.stage,entry.perfects].forEach(value=>{
+     const cell=document.createElement('td');cell.textContent=String(value);row.append(cell);
+    });
+    body.append(row);
+   });
+   table.append(body);content.replaceChildren(table);
+  }
  }
 
  async function api(options){
@@ -63,6 +101,15 @@ const SharedRanking=(()=>{
   const content=dialog.querySelector('.ranking-content');
   content.textContent='기록을 불러오는 중…';
   setNote('');
+  updateChrome();
+  if(tab==='today'){
+   try{
+    const entries=(typeof DailyMatch!=='undefined'&&DailyMatch.todayBoard)?DailyMatch.todayBoard():[];
+    setNote('로컬 · 오늘 시드 클리어만');
+    renderEntries(entries);
+   }catch{content.textContent='오늘의 랭킹을 불러오지 못했어요.'}
+   return;
+  }
   try{
    const data=await api();
    setNote('');
@@ -99,6 +146,15 @@ const SharedRanking=(()=>{
   }
  }
 
+ function setTab(next){
+  if(next!=='all'&&next!=='today')return;
+  tab=next;
+  load();
+ }
+ dialog.querySelectorAll('.ranking-tab').forEach(btn=>{
+  btn.onclick=()=>setTab(btn.dataset.tab);
+ });
+
  function open(){if(!dialog.open)dialog.showModal();load()}
  dialog.querySelector('.ranking-refresh').onclick=load;
 
@@ -120,6 +176,9 @@ const SharedRanking=(()=>{
    try{
     const data=await submitRecord(snapshot,nickname);
     submitted=true;input.disabled=true;button.textContent='등록 완료';
+    if(score.daily&&typeof DailyMatch!=='undefined'&&DailyMatch.recordBoardEntry){
+     DailyMatch.recordBoardEntry({id:snapshot.id,nickname,stage:snapshot.stage,perfects:snapshot.perfects});
+    }
     status.textContent=data.source==='mock'
      ? data.nickname+' · 현재 '+data.rank+'위 (이 기기에만 저장)'
      : data.nickname+' · 현재 '+data.rank+'위에 등록됐어요!';

@@ -130,3 +130,30 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 .title-unlock-note{margin:8px 0 0;font-size:13px;color:#9BFFE6;font-weight:700}
 .start-panel .title-chip{margin-top:2px;margin-bottom:6px}
 @media (prefers-reduced-motion:reduce){.title-card.is-new{animation:none}}
+
+
+/* P2 run-meta C: daily match */
+#daily-match{margin:8px 0 6px}
+.daily-card{border-radius:12px;border:1px solid #6087CA88;background:linear-gradient(145deg,#122B52F7,#080F25FC);padding:14px 14px 12px;text-align:left}
+.daily-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.daily-eyebrow{font-size:11px;letter-spacing:1.5px;color:#96C2F7;font-weight:700}
+.daily-seed{font-size:11px;color:#AABED8;font-variant-numeric:tabular-nums}
+.daily-title{margin:0 0 6px;font-size:16px;color:#F7F3E8;font-style:italic;font-weight:900;letter-spacing:-.5px}
+.daily-goal{margin:0 0 8px;font-size:14px;color:#FFE09A;font-weight:700}
+.daily-reward{display:inline-flex;align-items:center;height:26px;padding:0 10px;margin:0 0 10px;border-radius:999px;background:#1A2740;color:#C3A4FF;font-size:12px;font-weight:700}
+.daily-play{display:block;width:100%;min-height:44px;margin:0;border:0;border-radius:10px;background:linear-gradient(100deg,#416EFF,#775CFF);color:#fff;font:inherit;font-size:15px;font-weight:800;cursor:pointer}
+.daily-play:disabled{cursor:not-allowed}
+.daily-play.cleared{opacity:.75;color:#9BFFE6;background:#173453;border:1px solid #9BFFE644}
+.daily-help{margin:8px 0 0;font-size:11px;color:#AABED8;line-height:1.45}
+.daily-result-note{margin:8px 0 0;font-size:13px;font-weight:700}
+.daily-result-note.ok{color:#9BFFE6}
+.daily-result-note.fail{color:#FFAB8C}
+.ranking-dialog .ranking-tabs{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:10px 0 8px;padding:3px;border-radius:8px;background:#07172B}
+.ranking-dialog .ranking-tab{min-height:36px;padding:6px 8px;border:1px solid transparent;border-radius:6px;background:transparent;color:#AABED8;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.ranking-dialog .ranking-tab.active{background:#173453;color:#FFE09A;border-color:#FFE09A44}
+.ranking-subcopy,.ranking-topline{margin:0 0 6px}
+.start-panel #daily-match{margin:6px 0 4px}
+@media (max-height:640px){
+ .daily-help{display:none}
+ .daily-card{padding:10px 12px 10px}
+}

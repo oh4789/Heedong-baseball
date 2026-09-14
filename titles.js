@@ -4,9 +4,10 @@ const TitleBook=(()=>{
  const TITLES=[
   {id:'first_perfect',name:'첫 퍼펙트',condition:'첫 PERFECT 1회',done:'달성 · 첫 PERFECT',color:'#FFE09A',check:s=>s.perfects>=1},
   {id:'fire_dodge_5',name:'불꽃 회피왕',condition:'불꽃 마구 5회 회피',done:'달성 · 불꽃 회피 5회',color:'#FF986E',check:s=>s.lifetimeDodges>=5},
-  {id:'stage_3',name:'3회 연장전',condition:'스테이지 3 도달',done:'달성 · 스테이지 3',color:'#C3A4FF',check:s=>s.stage>=3}
+  {id:'stage_3',name:'3회 연장전',condition:'스테이지 3 도달',done:'달성 · 스테이지 3',color:'#C3A4FF',check:s=>s.stage>=3},
+  {id:'daily_batter',name:'일일 타자',condition:'오늘의 승부 1회 클리어',done:'달성 · 오늘의 승부',color:'#C3A4FF',check:s=>s.dailyClears>=1}
  ];
- let state={unlocked:[],equipped:null,lifetimeDodges:0,seen:[]};
+ let state={unlocked:[],equipped:null,lifetimeDodges:0,dailyClears:0,seen:[]};
  let getRecords=()=>({stage:0,perfects:0});
  let sayFn=null;
  let lastNewUnlocks=[];
@@ -25,16 +26,17 @@ const TitleBook=(()=>{
    state.unlocked=Array.isArray(raw.unlocked)?raw.unlocked.filter(id=>TITLES.some(t=>t.id===id)):[];
    state.equipped=TITLES.some(t=>t.id===raw.equipped)?raw.equipped:null;
    state.lifetimeDodges=Number.isSafeInteger(raw.lifetimeDodges)&&raw.lifetimeDodges>=0?raw.lifetimeDodges:0;
+   state.dailyClears=Number.isSafeInteger(raw.dailyClears)&&raw.dailyClears>=0?raw.dailyClears:0;
    state.seen=Array.isArray(raw.seen)?raw.seen.filter(id=>TITLES.some(t=>t.id===id)):[];
    if(state.equipped&&!state.unlocked.includes(state.equipped))state.equipped=null;
   }catch{}
  }
  function writeState(){
-  try{localStorage.setItem(KEY,JSON.stringify({unlocked:state.unlocked,equipped:state.equipped,lifetimeDodges:state.lifetimeDodges,seen:state.seen}))}catch{}
+  try{localStorage.setItem(KEY,JSON.stringify({unlocked:state.unlocked,equipped:state.equipped,lifetimeDodges:state.lifetimeDodges,dailyClears:state.dailyClears,seen:state.seen}))}catch{}
  }
  function snapshot(){
   const r=getRecords()||{};
-  return {stage:Number(r.stage)||0,perfects:Number(r.perfects)||0,lifetimeDodges:state.lifetimeDodges};
+  return {stage:Number(r.stage)||0,perfects:Number(r.perfects)||0,lifetimeDodges:state.lifetimeDodges,dailyClears:state.dailyClears};
  }
  function evaluate(){
   const snap=snapshot();
@@ -119,7 +121,7 @@ const TitleBook=(()=>{
    const icon=document.createElement('span');
    icon.className='title-card-icon';
    icon.style.color=unlocked?t.color:'#7A8FA8';
-   icon.textContent=unlocked?(t.id==='fire_dodge_5'?'🔥':t.id==='stage_3'?'③':'🏆'):'🔒';
+   icon.textContent=unlocked?(t.id==='fire_dodge_5'?'🔥':t.id==='stage_3'?'③':t.id==='daily_batter'?'📅':'🏆'):'🔒';
    const name=document.createElement('div');
    name.className='title-card-name';
    name.textContent=unlocked?t.name:'???';
@@ -184,12 +186,17 @@ const TitleBook=(()=>{
   refreshChip();
   refreshHeaderDot();
  }
+ function noteDailyClear(){
+  state.dailyClears=Math.max(0,Number(state.dailyClears)||0)+1;
+  writeState();
+  return evaluate();
+ }
  function unlockNoteHtml(){
   if(!lastNewUnlocks.length)return '';
   const names=lastNewUnlocks.map(t=>'「'+t.name+'」').join(' · ');
   return '<p class="title-unlock-note">칭호 해금! '+names+'</p>';
  }
 
- return {init,noteRun,evaluate,open,equip,unequip,refreshChip,unlockNoteHtml,get state(){return state},TITLES};
+ return {init,noteRun,noteDailyClear,evaluate,open,equip,unequip,refreshChip,unlockNoteHtml,get state(){return state},TITLES};
 })();
 if(typeof module!=='undefined')module.exports=TitleBook;
