@@ -1,1 +1,1 @@
-Playwright chromium binary missing on box; code + node --check verified 2026-09-14. Manual smoke via http://127.0.0.1:8765/
+Browser smoke PASS 2026-09-14: start daily card (stage_2), ranking 오늘 empty, titles 4 incl daily_batter.
