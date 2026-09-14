@@ -216,7 +216,12 @@ const TitleBook=(()=>{
  function noteDailyClear(){
   state.dailyClears=Math.max(0,Number(state.dailyClears)||0)+1;
   writeState();
-  return evaluate();
+  // Merge with unlocks from noteRun in the same end() so result note lists all titles.
+  const prev=lastNewUnlocks.slice();
+  const newly=evaluate();
+  const ids=new Set(newly.map(t=>t.id));
+  lastNewUnlocks=prev.filter(t=>!ids.has(t.id)).concat(newly);
+  return newly;
  }
  function unlockNoteHtml(){
   if(!lastNewUnlocks.length)return '';
