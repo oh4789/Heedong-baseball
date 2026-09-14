@@ -218,3 +218,11 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 .record-values{display:flex;flex-wrap:wrap;gap:6px 12px;overflow:visible;min-width:0}
 .record-values span{min-width:0;overflow-wrap:anywhere;word-break:keep-all}
 .start-panel .personal-records{overflow-x:hidden}
+
+/* Titles book cards polish v1 */
+.titles-dialog{background:#0B1E35;border:1px solid #7897B8;border-radius:16px}
+.title-card.locked .title-card-cond{color:#7A8FA8}
+.title-card.unlocked:not(.equipped){border-color:#FFE09A44}
+.title-card-action{border-color:#FFE09A88}
+.title-card.equipped{box-shadow:0 0 14px #FFE09A55}
+.titles-grid{gap:10px}
