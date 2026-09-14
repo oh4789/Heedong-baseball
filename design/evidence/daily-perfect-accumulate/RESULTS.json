@@ -1,0 +1,31 @@
+{
+  "when": "2026-09-14T10:42:02.304Z",
+  "goal": "session PERFECT accumulate across continue (perfect_3: 2+1)",
+  "results": [
+    {
+      "name": "startDailyPlay zeros session and activates",
+      "ok": true
+    },
+    {
+      "name": "segment 2 perfects does not clear perfect_3",
+      "ok": true
+    },
+    {
+      "name": "continue segment +1 clears perfect_3 (session 3)",
+      "ok": true
+    },
+    {
+      "name": "beginNormal resets session; noteRun without daily is noop",
+      "ok": true
+    },
+    {
+      "name": "new daily start zeros accumulator again",
+      "ok": true
+    },
+    {
+      "name": "stage goals still use stage (session perfects irrelevant)",
+      "ok": true
+    }
+  ],
+  "allPass": true
+}
