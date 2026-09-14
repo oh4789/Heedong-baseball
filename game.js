@@ -125,7 +125,42 @@ function draw(){
  ctx.beginPath();ctx.ellipse(z.x,z.y,game.getWideReach(),48,0,0,7);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
  ctx.strokeStyle='#c2ffd64a';ctx.lineWidth=1;ctx.setLineDash([3,5]);ctx.beginPath();ctx.ellipse(z.x,z.y,game.getPerfectZone().x,game.getPerfectZone().y,0,0,7);ctx.stroke();ctx.setLineDash([]);
  if(game.state==='ready'){ctx.fillStyle='#d1ffde';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('PARRY',z.x,z.y-57)}
- if(game.windup){ctx.fillStyle=game.windup.type==='fire'?'#ff9c70':'#fff0b9';ctx.globalAlpha=.35+Math.sin(visualTime*20)*.15;ctx.beginPath();ctx.arc(240,290,9+(1-game.windup.t/.65)*9,0,7);ctx.fill();ctx.globalAlpha=1}
+ if(game.windup){
+  const dur=game.windup.duration||game.windup.t||1;
+  const remain=Math.max(0,game.windup.t)/dur;
+  const pulse=.35+Math.sin(visualTime*20)*.15;
+  if(game.windup.type==='fire'){
+   // 3-stage fire telegraph: early orange ring → mid red aura → late flash/contract
+   const cx=240,cy=290;
+   if(remain>0.6){
+    // Early (~100–60%): orange warning ring + pitchcall already shown
+    const R=16+(1-remain)*10;
+    ctx.strokeStyle='#ff9c70';ctx.globalAlpha=.45+Math.sin(visualTime*14)*.2;ctx.lineWidth=3;
+    ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+    ctx.fillStyle='#ff9c7066';ctx.globalAlpha=pulse*.7;ctx.beginPath();ctx.arc(cx,cy,R*.55,0,7);ctx.fill();
+   }else if(remain>0.25){
+    // Mid (~60–25%): larger pulse + red aura
+    const R=22+(0.6-remain)*28;
+    ctx.fillStyle='#ff3b2044';ctx.globalAlpha=.35+Math.sin(visualTime*18)*.2;
+    ctx.beginPath();ctx.arc(cx,cy,R*1.35,0,7);ctx.fill();
+    ctx.strokeStyle='#ff5530';ctx.globalAlpha=.7+Math.sin(visualTime*22)*.25;ctx.lineWidth=4;
+    ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+    ctx.fillStyle='#ff7040aa';ctx.globalAlpha=pulse;ctx.beginPath();ctx.arc(cx,cy,10+(0.6-remain)*8,0,7);ctx.fill();
+   }else{
+    // Late (~25–0%): strong flash / ring contraction → release
+    const q=remain/0.25; // 1→0
+    const R=8+q*18;
+    ctx.fillStyle='#ffffff';ctx.globalAlpha=.15+(.25-remain)*1.2;ctx.beginPath();ctx.arc(cx,cy,28+q*12,0,7);ctx.fill();
+    ctx.strokeStyle='#ff2200';ctx.globalAlpha=.9;ctx.lineWidth=5+ (1-q)*3;
+    ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+    ctx.fillStyle='#ffaa55';ctx.globalAlpha=.55+Math.sin(visualTime*40)*.35;ctx.beginPath();ctx.arc(cx,cy,6+(1-q)*10,0,7);ctx.fill();
+   }
+   ctx.globalAlpha=1;
+  }else{
+   // Normal pitches keep yellow cue
+   ctx.fillStyle='#fff0b9';ctx.globalAlpha=pulse;ctx.beginPath();ctx.arc(240,290,9+(1-remain)*9,0,7);ctx.fill();ctx.globalAlpha=1;
+  }
+ }
  drawBatter();
  for(const b of game.balls){
  if(b.t<0)continue;
