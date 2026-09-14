@@ -161,13 +161,17 @@ const DailyMatch=(()=>{
   dayState.bestStage=Math.max(dayState.bestStage,stage);
   const clearedNow=meetsGoal(goal,{perfects,stage});
   let newlyCleared=false;
+  let titleUnlocked=false;
   if(clearedNow&&!dayState.cleared){
    dayState.cleared=true;
    newlyCleared=true;
-   if(typeof TitleBook!=='undefined'&&TitleBook.noteDailyClear)TitleBook.noteDailyClear();
+   if(typeof TitleBook!=='undefined'&&TitleBook.noteDailyClear){
+    const newly=TitleBook.noteDailyClear();
+    titleUnlocked=Array.isArray(newly)&&newly.length>0;
+   }
   }
   writeDay();
-  if(clearedNow)lastResultNote='오늘의 승부 클리어! · 칭호 해금';
+  if(clearedNow)lastResultNote=titleUnlocked?'오늘의 승부 클리어! · 칭호 해금':'오늘의 승부 클리어!';
   else lastResultNote=shortfallNote(goal,{perfects,stage});
   renderCard();
   return {cleared:clearedNow,newlyCleared,goal,lastResultNote,sessionPerfects:perfects};
