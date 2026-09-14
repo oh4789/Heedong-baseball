@@ -199,3 +199,8 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 #overlay .panel-body{scrollbar-width:thin}
 #overlay .panel-body::-webkit-scrollbar{width:6px}
 #overlay .panel-body::-webkit-scrollbar-thumb{background:#6087CA55;border-radius:4px}
+
+/* META HUD polish v1 — equipped chip trophy mark */
+.title-chip.equipped::before{content:'🏆';font-size:13px;line-height:1;margin-right:2px}
+.ranking-dialog .ranking-tabs{border:1px solid #6087CA55}
+.daily-card{box-shadow:0 8px 20px #030b1944}
