@@ -103,3 +103,29 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 @media (max-height:640px){
  .panel-body .result-art{display:none}
 }
+
+
+/* P2 run-meta: titles chip + catalog */
+.title-chip{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;margin:0 auto 8px;padding:0 14px;border-radius:999px;border:1px solid #7399BB55;background:#07172B;color:#AABED8;font-size:13px;font-weight:700;max-width:100%;position:relative}
+.title-chip.equipped{border-color:#FFE09A88;background:#142038;color:#FFE09A}
+.title-chip-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(280px,70vw)}
+.title-chip-chevron{color:#96C2F7;font-size:16px;line-height:1}
+.title-chip.has-new .title-new-dot,#titles-open.has-new .title-new-dot,.title-card.is-new>.title-new-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:#FF986E;display:block;pointer-events:none}
+#titles-open{position:relative}
+#titles-open .title-new-dot{top:6px;right:6px}
+.titles-dialog .titles-sub{margin:8px 0 12px;font-size:12px;color:#BCCDE2}
+.titles-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.title-card{position:relative;min-height:88px;border-radius:10px;border:1px solid #7195BD66;background:#102744;padding:12px;text-align:left;display:flex;flex-direction:column;gap:4px}
+.title-card.locked{opacity:.55;filter:grayscale(.35)}
+.title-card.unlocked .title-card-name{color:#FFE2A1;font-weight:800;font-size:14px}
+.title-card.locked .title-card-name{color:#7A8FA8;font-weight:700;font-size:14px}
+.title-card-cond{font-size:11px;color:#A9BDD6;line-height:1.4}
+.title-card-icon{font-size:18px;line-height:1;margin-bottom:2px}
+.title-card.equipped{border-color:#FFE09A;box-shadow:0 0 12px #FFE09A33}
+.title-equipped-badge{position:absolute;top:8px;right:8px;font-size:10px;font-weight:800;background:#FFE09A;color:#10233D;border-radius:999px;padding:2px 7px}
+.title-card-action{margin-top:auto;align-self:flex-start;border:1px solid #FFE09A55;background:transparent;color:#FFE09A;border-radius:8px;padding:6px 10px;font-size:12px;min-height:32px;font-weight:700}
+.title-card.equipped .title-card-action{border-color:#7797b855;color:#AABED8}
+.titles-dialog .title-card-action{min-height:32px;padding:6px 10px}
+.title-unlock-note{margin:8px 0 0;font-size:13px;color:#9BFFE6;font-weight:700}
+.start-panel .title-chip{margin-top:2px;margin-bottom:6px}
+@media (prefers-reduced-motion:reduce){.title-card.is-new{animation:none}}
