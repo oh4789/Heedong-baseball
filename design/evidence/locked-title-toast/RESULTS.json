@@ -1,0 +1,62 @@
+{
+  "pass": 11,
+  "fail": 0,
+  "total": 11,
+  "results": [
+    {
+      "name": "title chip visible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "catalog open with locked cards",
+      "ok": true,
+      "detail": "{\"open\":true,\"locked\":4,\"toastEl\":true}"
+    },
+    {
+      "name": "titles-toast element present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "toast text 아직 잠겨 있어요",
+      "ok": true,
+      "detail": "{\"text\":\"아직 잠겨 있어요\",\"hidden\":false,\"show\":true,\"opacity\":\"0.992938\",\"width\":314,\"height\":41.1875,\"top\":539.4188842773438,\"feedback\":\"\"}"
+    },
+    {
+      "name": "toast visible (show + opacity)",
+      "ok": true,
+      "detail": "{\"text\":\"아직 잠겨 있어요\",\"hidden\":false,\"show\":true,\"opacity\":\"0.992938\",\"width\":314,\"height\":41.1875,\"top\":539.4188842773438,\"feedback\":\"\"}"
+    },
+    {
+      "name": "toast not relying on #feedback",
+      "ok": true,
+      "detail": "fb="
+    },
+    {
+      "name": "keyboard Enter shows toast",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "close catalog clears toast",
+      "ok": true,
+      "detail": "{\"open\":false,\"toastHidden\":true}"
+    },
+    {
+      "name": "reopen starts without toast",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "start CTA still visible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "header titles-open over start",
+      "ok": true,
+      "detail": ""
+    }
+  ]
+}
