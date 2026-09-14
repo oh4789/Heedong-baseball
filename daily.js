@@ -10,11 +10,14 @@ const DailyMatch=(()=>{
  ];
  let dayState={day:'',cleared:false,bestPerfects:0,bestStage:0,runs:0};
  let activeDaily=false;
+ let sessionPerfects=0;
  let lastResultNote='';
  let startFn=null;
  let assetsReady=false;
+ let testToday=null;
 
  function todayKST(){
+  if(testToday)return testToday;
   try{
    return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   }catch{
@@ -104,6 +107,11 @@ const DailyMatch=(()=>{
   }
   return host;
  }
+ function startDailyPlay(){
+  activeDaily=true;
+  sessionPerfects=0;
+  lastResultNote='';
+ }
  function renderCard(){
   const host=ensureHost();
   if(!host)return;
@@ -124,8 +132,7 @@ const DailyMatch=(()=>{
   if(btn&&!cleared){
    btn.onclick=()=>{
     if(!assetsReady||typeof startFn!=='function')return;
-    activeDaily=true;
-    lastResultNote='';
+    startDailyPlay();
     startFn();
    };
   }
@@ -134,15 +141,21 @@ const DailyMatch=(()=>{
   assetsReady=!!ready;
   renderCard();
  }
- function beginNormal(){activeDaily=false;lastResultNote=''}
+ function beginNormal(){
+  activeDaily=false;
+  lastResultNote='';
+  sessionPerfects=0;
+ }
  function isActive(){return activeDaily}
  function todayGoal(){return goalForDay(readDay().day)}
  function noteRun(stats){
   if(!activeDaily){lastResultNote='';return null}
   readDay();
   const goal=goalForDay(dayState.day);
-  const perfects=Math.max(0,Number(stats?.perfects)||0);
+  const segmentPerfects=Math.max(0,Number(stats?.perfects)||0);
   const stage=Math.max(0,Number(stats?.stage)||0);
+  sessionPerfects+=segmentPerfects;
+  const perfects=sessionPerfects;
   dayState.runs+=1;
   dayState.bestPerfects=Math.max(dayState.bestPerfects,perfects);
   dayState.bestStage=Math.max(dayState.bestStage,stage);
@@ -157,7 +170,7 @@ const DailyMatch=(()=>{
   if(clearedNow)lastResultNote='오늘의 승부 클리어! · 칭호 해금';
   else lastResultNote=shortfallNote(goal,{perfects,stage});
   renderCard();
-  return {cleared:clearedNow,newlyCleared,goal,lastResultNote};
+  return {cleared:clearedNow,newlyCleared,goal,lastResultNote,sessionPerfects:perfects};
  }
  function resultNoteHtml(){
   if(!activeDaily||!lastResultNote)return '';
@@ -194,7 +207,11 @@ const DailyMatch=(()=>{
  return {
   init,renderCard,setAssetsReady,beginNormal,isActive,todayGoal,todayKST,
   noteRun,resultNoteHtml,todayBoard,recordBoardEntry,goalForDay,
-  get state(){return dayState},GOALS
+  startDailyPlay,
+  get state(){return dayState},
+  get sessionPerfects(){return sessionPerfects},
+  __setTestToday(day){testToday=day||null},
+  GOALS
  };
 })();
 if(typeof module!=='undefined')module.exports=DailyMatch;
