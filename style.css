@@ -143,6 +143,12 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 @keyframes title-card-new-pulse{0%{transform:scale(1);border-color:#C3A4FF;box-shadow:0 0 0 #C3A4FF00}40%{transform:scale(1.03);border-color:#FFE09A;box-shadow:0 0 16px #FFE09A55}100%{transform:scale(1);border-color:#C3A4FF88;box-shadow:0 0 10px #C3A4FF33}}
 @media (prefers-reduced-motion:reduce){.title-card.is-new,.title-card.pulse-once{animation:none}}
 
+/* P3: locked-title toast inside titles dialog (native dialog top-layer hides #feedback) */
+.titles-dialog{position:relative}
+.titles-toast{position:sticky;bottom:0;z-index:4;margin:10px 0 0;padding:10px 12px;border-radius:10px;border:1px solid #7399BB66;background:#07172Bf2;color:#AABED8;font-size:13px;font-weight:700;text-align:center;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s ease,transform .15s ease}
+.titles-toast.show{opacity:1;transform:translateY(0)}
+@media (prefers-reduced-motion:reduce){.titles-toast{transition:none}}
+
 
 /* P2 run-meta C: daily match */
 #daily-match{margin:8px 0 6px}

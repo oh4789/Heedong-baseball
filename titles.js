@@ -11,13 +11,31 @@ const TitleBook=(()=>{
  let getRecords=()=>({stage:0,perfects:0});
  let sayFn=null;
  let lastNewUnlocks=[];
+ let toastTimer=null;
+ function showLockedToast(msg){
+  const el=dialog.querySelector('.titles-toast');
+  if(!el)return;
+  el.textContent=msg||'아직 잠겨 있어요';
+  el.hidden=false;
+  el.classList.remove('show');
+  // force reflow so CSS fade restarts
+  void el.offsetWidth;
+  el.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{el.classList.remove('show');el.hidden=true;toastTimer=null},1200);
+ }
+ function hideLockedToast(){
+  const el=dialog.querySelector('.titles-toast');
+  if(toastTimer){clearTimeout(toastTimer);toastTimer=null}
+  if(el){el.classList.remove('show');el.hidden=true;el.textContent=''}
+ }
 
  const dialog=document.createElement('dialog');
  dialog.className='ranking-dialog titles-dialog';
- dialog.innerHTML='<div class="ranking-heading"><h2>칭호 도감</h2><button type="button" class="titles-close" aria-label="칭호 도감 닫기">닫기</button></div><p class="titles-sub"></p><div class="titles-grid" role="list"></div>';
+ dialog.innerHTML='<div class="ranking-heading"><h2>칭호 도감</h2><button type="button" class="titles-close" aria-label="칭호 도감 닫기">닫기</button></div><p class="titles-sub"></p><div class="titles-grid" role="list"></div><p class="titles-toast" role="status" aria-live="polite" hidden></p>';
  document.body.append(dialog);
  dialog.querySelector('.titles-close').onclick=()=>closeCatalog();
- dialog.addEventListener('close',()=>{refreshChip();refreshHeaderDot()});
+ dialog.addEventListener('close',()=>{hideLockedToast();refreshChip();refreshHeaderDot()});
 
  function readState(){
   try{
@@ -151,8 +169,8 @@ const TitleBook=(()=>{
    }else{
     card.tabIndex=0;
     card.setAttribute('role','button');
-    card.setAttribute('aria-label','잠긴 칭호');
-    const tip=()=>{if(typeof sayFn==='function')sayFn('아직 잠겨 있어요','#AABED8',1.2)};
+    card.setAttribute('aria-label','잠긴 칭호 · 아직 잠겨 있어요');
+    const tip=()=>{showLockedToast('아직 잠겨 있어요')};
     card.onclick=tip;
     card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();tip()}};
    }
@@ -175,6 +193,7 @@ const TitleBook=(()=>{
   if(!dialog.open)dialog.showModal();
  }
  function closeCatalog(){
+  hideLockedToast();
   if(dialog.open)dialog.close();
   refreshChip();
   refreshHeaderDot();
