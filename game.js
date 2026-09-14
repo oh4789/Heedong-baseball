@@ -147,11 +147,26 @@ function draw(){
  const shade=ctx.createLinearGradient(0,430,0,850);shade.addColorStop(0,'#08213000');shade.addColorStop(1,'#05182d25');ctx.fillStyle=shade;ctx.fillRect(0,430,W,420);
  drawPitcher();
  const z=game.zone;
+ const pz=game.getPerfectZone();
  const near=game.balls.some(b=>b.t>=0&&b.type!=='fire'&&((b.x-z.x)/game.getWideReach())**2+((b.y-z.y)/48)**2<=1);
- ctx.fillStyle=near?'#baffb722':'#a6fdda09';ctx.strokeStyle=game.cooldown>0?'#a4ccbf55':near?'#caffac':'#8afdcbbb';ctx.lineWidth=near?3:2;
- ctx.shadowColor='#6bffba';ctx.shadowBlur=near?17:7;
+ const inPerfect=game.balls.some(b=>b.t>=0&&b.type!=='fire'&&((b.x-z.x)/pz.x)**2+((b.y-z.y)/pz.y)**2<=1);
+ // Timing-ring v1 colors only (no Early/Late labels): idle #8AFDCB, near #CAFFAC, perfect flash #FFE09A
+ ctx.fillStyle=near?(inPerfect?'#FFE09A24':'#CAFFAC22'):'#a6fdda09';
+ ctx.strokeStyle=game.cooldown>0?'#a4ccbf55':inPerfect?'#FFE09A':near?'#CAFFAC':'#8AFDCBbb';
+ ctx.lineWidth=inPerfect?3.5:near?3:2;
+ ctx.shadowColor=inPerfect?'#FFE09A':near?'#CAFFAC':'#8AFDCB';
+ ctx.shadowBlur=inPerfect?22:near?14:6;
  ctx.beginPath();ctx.ellipse(z.x,z.y,game.getWideReach(),48,0,0,7);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
- ctx.strokeStyle='#c2ffd64a';ctx.lineWidth=1;ctx.setLineDash([3,5]);ctx.beginPath();ctx.ellipse(z.x,z.y,game.getPerfectZone().x,game.getPerfectZone().y,0,0,7);ctx.stroke();ctx.setLineDash([]);
+ ctx.strokeStyle=inPerfect?'#FFE09Acc':'#CAFFAC66';ctx.lineWidth=inPerfect?2.4:1.2;
+ if(inPerfect){ctx.shadowColor='#FFE09A';ctx.shadowBlur=16}
+ ctx.setLineDash(inPerfect?[]:[3,5]);ctx.beginPath();ctx.ellipse(z.x,z.y,pz.x,pz.y,0,0,7);ctx.stroke();ctx.setLineDash([]);ctx.shadowBlur=0;
+ if(inPerfect){
+  // Perfect ellipse only: hard flash (design note) — visual only
+  ctx.save();ctx.translate(z.x,z.y);ctx.globalAlpha=.35+Math.sin(visualTime*36)*.25;
+  ctx.fillStyle='#FFF2A5';ctx.beginPath();
+  for(let i=0;i<8;i++){const a=i*Math.PI/4+visualTime*2,r=i%2?18:8;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}
+  ctx.closePath();ctx.fill();ctx.restore();
+ }
  if(game.state==='ready'){ctx.fillStyle='#d1ffde';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('PARRY',z.x,z.y-57)}
  if(game.windup){
   const dur=game.windup.duration||game.windup.t||1;
