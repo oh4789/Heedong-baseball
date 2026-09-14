@@ -192,3 +192,10 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 #overlay .panel:not(.start-panel) .panel-cta{padding:12px 0 max(16px,env(safe-area-inset-bottom));gap:8px;display:flex;flex-direction:column}
 #overlay .panel:not(.start-panel) .panel-cta .primary,#overlay .panel:not(.start-panel) .panel-cta #retry,#overlay .panel:not(.start-panel) .panel-cta #continue-max{background:linear-gradient(100deg,#416EFF,#775CFF);color:#fff;border-radius:10px;box-shadow:0 8px 20px #416EFF44}
 #overlay .panel:not(.start-panel) .panel-cta .secondary,#overlay .panel:not(.start-panel) .panel-cta #to-menu{margin-top:8px}
+
+/* Result polish follow-up: no nested scrollbar look on records */
+.personal-records{overflow:visible;max-height:none}
+#overlay .panel:not(.start-panel) .panel-body .personal-records{overflow:visible}
+#overlay .panel-body{scrollbar-width:thin}
+#overlay .panel-body::-webkit-scrollbar{width:6px}
+#overlay .panel-body::-webkit-scrollbar-thumb{background:#6087CA55;border-radius:4px}
