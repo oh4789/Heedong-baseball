@@ -1,0 +1,68 @@
+{
+  "total": 12,
+  "passed": 12,
+  "failed": 0,
+  "failures": [],
+  "results": [
+    {
+      "name": "fixture day stage_2",
+      "ok": true,
+      "detail": "{\"id\":\"stage_2\",\"kind\":\"stage\",\"target\":2,\"label\":\"스테이지 2 도달\"}"
+    },
+    {
+      "name": "daily active",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "first clear note includes 칭호 해금",
+      "ok": true,
+      "detail": "오늘의 승부 클리어! · 칭호 해금"
+    },
+    {
+      "name": "first clear unlock note shows 일일 타자",
+      "ok": true,
+      "detail": "<p class=\"title-unlock-note pulse\">칭호 해금! 「일일 타자」</p>"
+    },
+    {
+      "name": "daily_batter unlocked",
+      "ok": true,
+      "detail": "[\"daily_batter\"]"
+    },
+    {
+      "name": "still daily after continue",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "continue clear note omits 칭호 해금",
+      "ok": true,
+      "detail": "오늘의 승부 클리어!"
+    },
+    {
+      "name": "continue unlock note empty",
+      "ok": true,
+      "detail": "\"\""
+    },
+    {
+      "name": "day2 daily active",
+      "ok": true,
+      "detail": "{\"active\":true,\"goal\":{\"id\":\"stage_3\",\"kind\":\"stage\",\"target\":3,\"label\":\"스테이지 3 도달\"}}"
+    },
+    {
+      "name": "day2 clear note omits 칭호 해금 (already owned)",
+      "ok": true,
+      "detail": "오늘의 승부 클리어!"
+    },
+    {
+      "name": "day2 unlock note empty",
+      "ok": true,
+      "detail": "\"\""
+    },
+    {
+      "name": "shortfall note still present",
+      "ok": true,
+      "detail": "오늘의 목표까지 PERFECT 3회 부족"
+    }
+  ]
+}
