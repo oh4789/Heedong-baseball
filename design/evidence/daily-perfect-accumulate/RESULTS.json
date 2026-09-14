@@ -1,6 +1,6 @@
 {
-  "when": "2026-09-14T10:42:02.304Z",
-  "goal": "session PERFECT accumulate across continue (perfect_3: 2+1)",
+  "when": "2026-09-14T11:43:08.428Z",
+  "goal": "session PERFECT accumulate + board entry uses session total",
   "results": [
     {
       "name": "startDailyPlay zeros session and activates",
@@ -15,7 +15,11 @@
       "ok": true
     },
     {
-      "name": "beginNormal resets session; noteRun without daily is noop",
+      "name": "recordBoardEntry stores session total not segment",
+      "ok": true
+    },
+    {
+      "name": "beginNormal / non-cleared refuse board entry",
       "ok": true
     },
     {

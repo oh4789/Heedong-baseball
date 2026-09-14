@@ -1,6 +1,7 @@
 'use strict';
 /**
- * Pure Node unit test: DailyMatch session PERFECT accumulation across continue segments.
+ * Pure Node unit test: DailyMatch session PERFECT accumulation across continue segments,
+ * plus daily board entry using session total (not misleading segment perfects).
  * Run: node design/evidence/daily-perfect-accumulate/test-session-perfects.js
  */
 const path=require('path');
@@ -62,17 +63,51 @@ step('continue segment +1 clears perfect_3 (session 3)',[()=>{
  assert(r.lastResultNote.indexOf('클리어')>=0);
 }][0]);
 
-step('beginNormal resets session; noteRun without daily is noop',[()=>{
+step('recordBoardEntry stores session total not segment',[()=>{
+ // After noteRun 2+1 → session 3; caller might still pass segment perfects=1
+ const beforeSession=DailyMatch.sessionPerfects;
+ assert(beforeSession===3,'precondition session=3');
+ const ok=DailyMatch.recordBoardEntry({
+  id:'test-board-session',
+  nickname:'테스터',
+  stage:2,
+  perfects:1 // misleading segment value
+ });
+ assert(ok===true,'board accepted after clear');
+ assert(DailyMatch.sessionPerfects===beforeSession,'recordBoardEntry must not mutate session');
+ const board=DailyMatch.todayBoard();
+ assert(board.length>=1,'board has entry');
+ const row=board.find(e=>e.id==='test-board-session')||board[0];
+ assert(row.perfects===3,'board stores session 3 not segment 1');
+ assert(row.nickname==='테스터');
+ assert(row.stage===2);
+}][0]);
+
+step('beginNormal / non-cleared refuse board entry',[()=>{
  DailyMatch.beginNormal();
  assert(DailyMatch.isActive()===false);
  assert(DailyMatch.sessionPerfects===0);
  const r=DailyMatch.noteRun({perfects:9,stage:9});
  assert(r===null,'inactive noteRun returns null');
  assert(DailyMatch.sessionPerfects===0,'still zero');
+ // Fresh uncleared day must refuse board (readDay via todayGoal after clear storage)
+ localStorage.clear();
+ DailyMatch.__setTestToday(PERFECT_DAY);
+ DailyMatch.beginNormal();
+ DailyMatch.todayGoal(); // forces readDay → uncleared blank day
+ assert(DailyMatch.state.cleared===false,'fresh day uncleared');
+ DailyMatch.startDailyPlay();
+ const refused=DailyMatch.recordBoardEntry({id:'nope',nickname:'거부',stage:1,perfects:99});
+ assert(refused===false,'uncleared day refuses board');
+ assert(DailyMatch.todayBoard().length===0,'no board rows');
+ // Empty nickname refused even after clear
+ DailyMatch.noteRun({perfects:3,stage:1});
+ assert(DailyMatch.state.cleared===true);
+ const noNick=DailyMatch.recordBoardEntry({id:'x',nickname:'  ',stage:1,perfects:1});
+ assert(noNick===false,'empty nickname refused');
 }][0]);
 
 step('new daily start zeros accumulator again',[()=>{
- // day already cleared — wipe cleared for a fresh session sim
  localStorage.clear();
  DailyMatch.__setTestToday(PERFECT_DAY);
  DailyMatch.startDailyPlay();
@@ -107,23 +142,29 @@ DailyMatch.beginNormal();
 
 const out={
  when:new Date().toISOString(),
- goal:'session PERFECT accumulate across continue (perfect_3: 2+1)',
+ goal:'session PERFECT accumulate + board entry uses session total',
  results,
  allPass:results.every(r=>r.ok)
 };
 fs.writeFileSync(path.join(__dirname,'RESULTS.json'),JSON.stringify(out,null,2));
 fs.writeFileSync(path.join(__dirname,'README.txt'),
-`daily PERFECT session accumulate — Node unit test
-================================================
+`daily PERFECT session accumulate + board entry — Node unit test
+===============================================================
 Run: node design/evidence/daily-perfect-accumulate/test-session-perfects.js
 
 Cases:
 1. startDailyPlay zeros session + activates
 2. noteRun({perfects:2,stage:1}) → not cleared (session 2)
 3. noteRun({perfects:1,stage:2}) → cleared (session 3) for perfect_3
-4. beginNormal resets; inactive noteRun is noop
-5. new startDailyPlay zeros again
-6. stage_2 still clears via stage number
+4. recordBoardEntry({perfects:1}) after session 3 → board stores 3 (not segment 1);
+   sessionPerfects unchanged by recordBoardEntry
+5. beginNormal resets; inactive noteRun noop; uncleared day / empty nick refuse board
+6. new startDailyPlay zeros again
+7. stage_2 still clears via stage number
+
+Also covered in production:
+- leaderboard.js bindResult passes DailyMatch.sessionPerfects at submit (fallback snapshot)
+- result-grid PERFECT display remains segment (game.perfects) — unchanged
 
 Fixture days: 2026-09-01 → perfect_3, 2026-09-14 → stage_2
 `);
