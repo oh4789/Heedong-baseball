@@ -89,7 +89,7 @@ function pause(){if(!$('#cinematic').classList.contains('hidden'))return;if(game
 $('#start').onclick=()=>{DailyMatch.beginNormal();start('new')};$('#pause').onclick=pause;$('#cinematic-skip').onclick=finishCinematic;$('#intro-replay').onclick=()=>playCinematic(true);$('#sound').onclick=()=>{muted=!muted;$('#sound').textContent=muted?'×':'♪';$('#sound').setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');$('#sound').setAttribute('aria-pressed',String(!muted));GameMusic.setMuted(muted);if(!muted){activateAudio();GameMusic.activate();if(!$('#cinematic').classList.contains('hidden'))GameMusic.startOpening();else if(game.state==='playing')GameMusic.startPlay()}};
 canvas.addEventListener('pointerdown',e=>{if(game.state!=='playing'||pointer)return;e.preventDefault();activateAudio();canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,x:e.clientX,y:e.clientY};aim={x:0,y:0}});canvas.addEventListener('pointermove',e=>{if(!pointer||e.pointerId!==pointer.id)return;const sx=W/canvas.clientWidth,sy=H/canvas.clientHeight;aim={x:(e.clientX-pointer.x)*sx,y:(e.clientY-pointer.y)*sy};const l=Math.hypot(aim.x,aim.y);if(l>48){pointer.x=e.clientX-aim.x/l*48/sx;pointer.y=e.clientY-aim.y/l*48/sy}});canvas.addEventListener('pointerup',e=>{if(!pointer||e.pointerId!==pointer.id)return;clearInput();game.swing();processEvents()});function cancel(e){if(pointer?.id===e.pointerId)clearInput()}canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);
 addEventListener('keydown',e=>{if(!$('#cinematic').classList.contains('hidden')||e.target?.closest?.('input,textarea,dialog,button'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys[e.key.toLowerCase()]=true;if(e.code==='Space'&&!e.repeat){if(tryDefeatRetry('space'))return;activateAudio();game.swing();processEvents()}if(e.key==='Escape'&&!e.repeat)pause()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{if(game.state==='playing')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&game.state==='playing')pause()});
-function processEvents(){for(const e of game.events.splice(0)){sound(e.type);if(e.type==='perfect'){perfectStreak++;records.update(game.stage,game.perfects);say('PERFECT!','#fff2a5');const n=perfectStreak>=2?42:32;burst(e.x,e.y,'#ffe491',n);burst(e.x,e.y,'#ffd060',Math.floor(n/2));burst(e.x,e.y,'#fff8d0',Math.floor(n/3));freeze=.045;shake=.12}else if(e.type==='hit'){perfectStreak=0;say('NICE HIT','#b5f3d2');burst(e.x,e.y,'#b5f3d2',12)}else if(e.type==='whiff'){perfectStreak=0;say('헛스윙','#b8cccc',.45)}else if(e.type==='lastStand'){say('끝까지 버티기! · 체력 1','#a7ffe3',1.3);burst(game.player.x,game.player.y,'#a7ffe3',24)}else if(e.type==='damage'){perfectStreak=0;say('피격!','#ff9a84');flash=.18;shake=.16;burst(e.x,e.y,'#ff997d');}else if(e.type==='windup'){$('#pitchcall').innerHTML='<span>'+({double:'연속 직구 · 두 번 받아치세요',changeFast:'체인지업 → 직구 · 기다렸다 두 번!',slider:'슬라이더 · 휘는 공을 따라가세요'}[e.pattern]||(e.pitch==='fire'?'⚠ 불꽃 마구 · 회피':e.pitch==='slow'?'체인지업 · 기다리세요':'직구 · 받아치세요'))+'</span>';$('#pitchcall').style.color=e.pitch==='fire'?'#FFC9A8':e.pitch==='slow'?'#a5e7ff':'#f4eacb';callTime=4;if(e.pitch==='fire'&&!fireCoachShown){fireCoachShown=true;say('불꽃 마구! · 치지 말고 옆으로!','#FF7A45',2.2)}}else if(e.type==='pitch'){pitchPoseTime=.55}else if(e.type==='twin'){say('희원이의 도움!','#d9b5ff',1.1);burst(240,250,'#d59cff',22)}else if(e.type==='impact'){bossImpact=.2;burst(240,280,e.perfect?'#ffdb82':'#c3efd3',18)}else if(e.type==='rally'){say('RALLY x'+e.count+' · 홈런 찬스!','#ffe38c',1.1);burst(240,280,'#ffb84d',32);freeze=.06;shake=.24}else if(e.type==='reaction'){say(pickHeedongTaunt(e.line),'#d3e8ff',1.15)}else if(e.type==='fury')say('승부는 지금부터!','#ffd18b',1.2);else if(e.type==='end')end()}hud()}
+function processEvents(){for(const e of game.events.splice(0)){sound(e.type);if(e.type==='perfect'){perfectStreak++;records.update(game.stage,game.perfects);say('PERFECT!','#fff2a5');const n=perfectStreak>=4?48:perfectStreak>=2?38:28;burst(e.x,e.y,'#FFD25B',n);burst(e.x,e.y,'#FFE09A',Math.floor(n/2));burst(e.x,e.y,'#FFF2A5',Math.floor(n/3));if(perfectStreak>=4)burst(e.x,e.y,'#C3A4FF',8);freeze=.045;shake=.12}else if(e.type==='hit'){perfectStreak=0;say('NICE HIT','#b5f3d2');burst(e.x,e.y,'#b5f3d2',12)}else if(e.type==='whiff'){perfectStreak=0;say('헛스윙','#b8cccc',.45)}else if(e.type==='lastStand'){say('끝까지 버티기! · 체력 1','#a7ffe3',1.3);burst(game.player.x,game.player.y,'#a7ffe3',24)}else if(e.type==='damage'){perfectStreak=0;say('피격!','#ff9a84');flash=.18;shake=.16;burst(e.x,e.y,'#ff997d');}else if(e.type==='windup'){$('#pitchcall').innerHTML='<span>'+({double:'연속 직구 · 두 번 받아치세요',changeFast:'체인지업 → 직구 · 기다렸다 두 번!',slider:'슬라이더 · 휘는 공을 따라가세요'}[e.pattern]||(e.pitch==='fire'?'⚠ 불꽃 마구 · 회피':e.pitch==='slow'?'체인지업 · 기다리세요':'직구 · 받아치세요'))+'</span>';$('#pitchcall').style.color=e.pitch==='fire'?'#FFC9A8':e.pitch==='slow'?'#a5e7ff':'#f4eacb';callTime=4;if(e.pitch==='fire'&&!fireCoachShown){fireCoachShown=true;say('불꽃 마구! · 치지 말고 옆으로!','#FF7A45',2.2)}}else if(e.type==='pitch'){pitchPoseTime=.55}else if(e.type==='twin'){say('희원이의 도움!','#d9b5ff',1.1);burst(240,250,'#d59cff',22)}else if(e.type==='impact'){bossImpact=.2;burst(240,280,e.perfect?'#ffdb82':'#c3efd3',18)}else if(e.type==='rally'){say('RALLY x'+e.count+' · 홈런 찬스!','#ffe38c',1.1);burst(240,280,'#ffb84d',32);freeze=.06;shake=.24}else if(e.type==='reaction'){say(pickHeedongTaunt(e.line),'#d3e8ff',1.15)}else if(e.type==='fury')say('승부는 지금부터!','#ffd18b',1.2);else if(e.type==='end')end()}hud()}
 function ball(x,y,r,color,fire=false){ctx.save();ctx.translate(x,y);if(fire){ctx.fillStyle='#f8773766';ctx.beginPath();ctx.moveTo(-r,0);ctx.lineTo(-r*.6,-r*3.2);ctx.lineTo(0,-r*1.6);ctx.lineTo(r*.6,-r*3.8);ctx.lineTo(r,0);ctx.fill()}ctx.shadowColor=color;ctx.shadowBlur=fire?15:7;ctx.fillStyle=color;ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle=fire?'#6d260d':'#ba5a51';ctx.lineWidth=1.7;ctx.beginPath();ctx.arc(-r*.8,0,r*.7,-1.1,1.1);ctx.stroke();ctx.beginPath();ctx.arc(r*.8,0,r*.7,2.05,4.25);ctx.stroke();ctx.restore()}
 function currentPitchPose(){
  if(game.windup){
@@ -218,24 +218,30 @@ function draw(){
   const q=Math.min(1,Math.max(0,r.t-.075)/.38);
   const x0=r.sx+(240-r.sx)*q,y0=r.sy+(290-r.sy)*q;
   if(r.perfect){
-   const hot=perfectStreak>=2;
-   // Outer glow ribbon
-   ctx.strokeStyle=hot?'#ffd24a55':'#ffe69a66';ctx.shadowColor='#ffd25e';ctx.shadowBlur=hot?28:20;
-   ctx.lineWidth=hot?14:10;ctx.lineCap='round';
-   ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(r.x,r.y);ctx.stroke();
-   // Core gold trail
-   ctx.strokeStyle=hot?'#fff3a8ee':'#ffe69acc';ctx.shadowBlur=hot?18:13;ctx.lineWidth=hot?9:7;
-   ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(r.x,r.y);ctx.stroke();
+   // Design gold trail v1: intensify at streak>=4; palette #FFE09A #FFD25B #FFF2A5 #C3A4FF
+   const hot=perfectStreak>=4, warm=perfectStreak>=2;
+   const wob=Math.sin(visualTime*22)* (hot?3.2:warm?2:1.2);
+   ctx.lineCap='round';
+   // Soft outer ribbon
+   ctx.strokeStyle=hot?'#FFE09A66':'#FFE09A55';ctx.shadowColor='#FFD25B';ctx.shadowBlur=hot?32:warm?24:18;
+   ctx.lineWidth=hot?16:warm?12:9;
+   ctx.beginPath();ctx.moveTo(x0,y0+wob*.4);ctx.quadraticCurveTo((x0+r.x)/2+wob, (y0+r.y)/2-Math.abs(wob), r.x,r.y);ctx.stroke();
+   // Core gold
+   ctx.strokeStyle=hot?'#FFF2A5ee':'#FFD25Bcc';ctx.shadowBlur=hot?20:14;ctx.lineWidth=hot?10:warm?8:6;
+   ctx.beginPath();ctx.moveTo(x0,y0);ctx.quadraticCurveTo((x0+r.x)/2-wob*.5,(y0+r.y)/2,r.x,r.y);ctx.stroke();
    ctx.shadowBlur=0;
-   // Sparkle crumbs along trail
-   const sparks=hot?5:3;
+   // Star sparkles along trail
+   const sparks=hot?7:warm?5:3;
    for(let i=0;i<sparks;i++){
-    const u=(i+1)/(sparks+1),sx=x0+(r.x-x0)*u,sy=y0+(r.y-y0)*u;
-    ctx.fillStyle=i%2?'#fff8d0':'#ffd060';ctx.globalAlpha=.55+Math.sin(visualTime*30+i)*.35;
-    ctx.beginPath();ctx.arc(sx+Math.sin(visualTime*18+i)*2,sy,hot?3.2:2.2,0,7);ctx.fill();
+    const u=(i+1)/(sparks+1),sx=x0+(r.x-x0)*u+Math.sin(visualTime*20+i)*3,sy=y0+(r.y-y0)*u;
+    const col=i%3===0?'#C3A4FF':(i%2?'#FFF2A5':'#FFD25B');
+    ctx.fillStyle=col;ctx.globalAlpha=.5+Math.sin(visualTime*28+i)*.4;
+    const s=hot?3.6:2.4;
+    ctx.beginPath();ctx.moveTo(sx,sy-s);ctx.lineTo(sx+s*.35,sy-s*.35);ctx.lineTo(sx+s,sy);ctx.lineTo(sx+s*.35,sy+s*.35);
+    ctx.lineTo(sx,sy+s);ctx.lineTo(sx-s*.35,sy+s*.35);ctx.lineTo(sx-s,sy);ctx.lineTo(sx-s*.35,sy-s*.35);ctx.closePath();ctx.fill();
    }
    ctx.globalAlpha=1;
-   ball(r.x,r.y,hot?11:10,hot?'#fff7c4':'#fff0b1');
+   ball(r.x,r.y,hot?12:warm?10.5:10,hot?'#FFF2A5':'#FFD25B');
   }else{
    ctx.strokeStyle='#d1ffde99';ctx.shadowColor='#ffd25e';ctx.shadowBlur=3;ctx.lineWidth=3;
    ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(r.x,r.y);ctx.stroke();ctx.shadowBlur=0;
@@ -243,7 +249,17 @@ function draw(){
   }
  }
  if(game.swingAnim>0){const t=1-game.swingAnim/.21;
- ctx.save();ctx.globalAlpha=Math.sin(t*Math.PI);ctx.strokeStyle='#fff2c4bb';ctx.lineWidth=9;ctx.beginPath();ctx.arc(z.x,z.y,53,Math.PI*.0,Math.PI*.9);ctx.stroke();ctx.lineWidth=3;ctx.strokeStyle='#fbe4ad77';ctx.beginPath();ctx.arc(z.x,z.y,61,Math.PI*.05,Math.PI*.8);ctx.stroke();ctx.restore();
+ const streak=Math.min(4,perfectStreak);
+ ctx.save();ctx.globalAlpha=Math.sin(t*Math.PI);
+ // Gold swing ribbon (palette) + dashed afterimages scaled by perfect streak
+ ctx.strokeStyle=streak>=4?'#FFD25Bdd':'#FFE09Acc';ctx.shadowColor='#FFD25B';ctx.shadowBlur=streak>=2?16:8;ctx.lineWidth=streak>=4?12:9;
+ ctx.beginPath();ctx.arc(z.x,z.y,53,Math.PI*.0,Math.PI*.9);ctx.stroke();
+ ctx.shadowBlur=0;ctx.setLineDash([5,6]);ctx.lineWidth=2;
+ for(let i=0;i<streak;i++){
+  ctx.strokeStyle=i%2?'#FFF2A588':'#C3A4FF66';ctx.globalAlpha=Math.sin(t*Math.PI)*(0.35+i*0.08);
+  ctx.beginPath();ctx.arc(z.x,z.y,57+i*3.5,Math.PI*.02,Math.PI*.85);ctx.stroke();
+ }
+ ctx.setLineDash([]);ctx.restore();
  // The moving bat meets the same point as the timing marker.
  ctx.strokeStyle='#6e431b';ctx.lineWidth=11;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(z.x-42,z.y+28);ctx.lineTo(z.x+Math.cos(t*Math.PI)*35,z.y-Math.sin(t*Math.PI)*15);ctx.stroke();ctx.strokeStyle='#ebc88b';ctx.lineWidth=7;ctx.stroke();
  }
