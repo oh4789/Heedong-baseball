@@ -1,0 +1,123 @@
+{
+  "total": 23,
+  "passed": 23,
+  "failed": 0,
+  "failures": [],
+  "results": [
+    {
+      "name": "start CTA visible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "SPACE hint under CTA",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "title chip present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "daily card present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "daily goal stage_2 today",
+      "ok": true,
+      "detail": "TODAY'S MATCH 시드 · 09.14 오늘의 승부 목표 · 스테이지 2 도달 보상 · 「일일 타자」 칭호 오늘 한 판 매일 자정(KST) 시드 갱신 · 랭킹 「오늘」에 기록"
+    },
+    {
+      "name": "sticky CTA pinned on short viewport",
+      "ok": true,
+      "detail": "y1=523.8125 y2=523.8125"
+    },
+    {
+      "name": "SPACE hint still visible short",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "titles catalog opens",
+      "ok": true,
+      "detail": "{\"ok\":true,\"cards\":4,\"open\":true}"
+    },
+    {
+      "name": "daily button ready after wipe",
+      "ok": true,
+      "detail": "오늘 한 판"
+    },
+    {
+      "name": "daily mode active in play",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "result daily clear note",
+      "ok": true,
+      "detail": "오늘의 승부 클리어! · 칭호 해금"
+    },
+    {
+      "name": "title unlock note present",
+      "ok": true,
+      "detail": "{\"text\":\"칭호 해금! 「일일 타자」\",\"pulse\":true}"
+    },
+    {
+      "name": "LS daily.cleared true",
+      "ok": true,
+      "detail": "{\"day\":\"2026-09-14\",\"cleared\":true,\"bestPerfects\":1,\"bestStage\":2,\"runs\":1}"
+    },
+    {
+      "name": "LS daily_batter unlocked",
+      "ok": true,
+      "detail": "[\"first_perfect\",\"daily_batter\"]"
+    },
+    {
+      "name": "menu shows 오늘 클리어 ✓",
+      "ok": true,
+      "detail": "오늘 클리어 ✓"
+    },
+    {
+      "name": "daily button disabled after clear",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "title chip still after restore",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "start CTA after restore",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "titles reopen after restore",
+      "ok": true,
+      "detail": "{\"ok\":true,\"cards\":4,\"open\":true}"
+    },
+    {
+      "name": "catalog 일일 타자 unlocked",
+      "ok": true,
+      "detail": "{\"found\":true,\"locked\":false,\"text\":\"📅일일 타자달성 · 오늘의 승부장착\"}"
+    },
+    {
+      "name": "ranking today tab reachable",
+      "ok": true,
+      "detail": "친구들과 기록 대결 닫기 전체 오늘 도달 스테이지순 · 동점이면 PERFECT순 등록한 승부별 기록 · TOP 20 로컬 모드 · 이 기기 기록만 표시돼요 아직 등록된 기록이 없어요. 첫 기록을 남겨보세요! 새로고침"
+    },
+    {
+      "name": "re-enter normal play OK",
+      "ok": true,
+      "detail": "{\"playing\":true,\"daily\":false}"
+    },
+    {
+      "name": "after pause→menu still cleared",
+      "ok": true,
+      "detail": "오늘 클리어 ✓"
+    }
+  ]
+}
