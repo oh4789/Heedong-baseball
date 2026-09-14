@@ -132,7 +132,9 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 @keyframes title-unlock-pulse{0%{transform:scale(1);border-color:#9BFFE644;box-shadow:0 0 0 #9BFFE600}45%{transform:scale(1.03);border-color:#9BFFE6;box-shadow:0 0 14px #9BFFE655}100%{transform:scale(1);border-color:#9BFFE644;box-shadow:0 0 0 #9BFFE600}}
 @media (prefers-reduced-motion:reduce){.title-unlock-note.pulse{animation:none}}
 .start-panel .title-chip{margin-top:2px;margin-bottom:6px}
-@media (prefers-reduced-motion:reduce){.title-card.is-new{animation:none}}
+.title-card.is-new,.title-card.pulse-once{animation:title-card-new-pulse .45s ease-out 1;border-color:#C3A4FF;box-shadow:0 0 14px #C3A4FF55}
+@keyframes title-card-new-pulse{0%{transform:scale(1);border-color:#C3A4FF;box-shadow:0 0 0 #C3A4FF00}40%{transform:scale(1.03);border-color:#FFE09A;box-shadow:0 0 16px #FFE09A55}100%{transform:scale(1);border-color:#C3A4FF88;box-shadow:0 0 10px #C3A4FF33}}
+@media (prefers-reduced-motion:reduce){.title-card.is-new,.title-card.pulse-once{animation:none}}
 
 
 /* P2 run-meta C: daily match */

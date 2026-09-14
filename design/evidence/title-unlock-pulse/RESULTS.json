@@ -1,0 +1,22 @@
+[
+  {
+    "n": "chip has-new before open",
+    "ok": true,
+    "d": ""
+  },
+  {
+    "n": "is-new cards present",
+    "ok": true,
+    "d": "{\"count\":2,\"styles\":[{\"id\":\"first_perfect\",\"anim\":\"title-card-new-pulse\",\"dur\":\"0.45s\",\"cls\":\"title-card unlocked is-new\"},{\"id\":\"daily_batter\",\"anim\":\"title-card-new-pulse\",\"dur\":\"0.45s\",\"cls\":\"title-card unlocked is-new\"}]}"
+  },
+  {
+    "n": "card animation name",
+    "ok": true,
+    "d": "[\"title-card-new-pulse\",\"title-card-new-pulse\"]"
+  },
+  {
+    "n": "no is-new on second open",
+    "ok": true,
+    "d": "count=0"
+  }
+]

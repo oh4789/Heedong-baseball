@@ -162,7 +162,15 @@ const TitleBook=(()=>{
  function open(){
   evaluate();
   renderCatalog();
+  // Keep is-new on freshly unlocked cards for one open pulse, then mark seen.
+  const fresh=new Set((lastNewUnlocks||[]).map(t=>t.id));
+  if(fresh.size){
+   dialog.querySelectorAll('.title-card.is-new').forEach(card=>{
+    if(fresh.has(card.dataset.id))card.classList.add('pulse-once');
+   });
+  }
   markAllSeen();
+  refreshChip();
   refreshHeaderDot();
   if(!dialog.open)dialog.showModal();
  }
