@@ -59,7 +59,7 @@ header,footer{padding-left:max(18px,env(safe-area-inset-left));padding-right:max
 #overlay .panel{display:flex;flex-direction:column;max-height:min(92dvh,820px);overflow:hidden;padding-bottom:0}
 #overlay .panel-body{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 #overlay .panel-cta{flex:0 0 auto;position:relative;z-index:3;margin-top:0;padding:12px 0 max(12px,env(safe-area-inset-bottom));background:linear-gradient(180deg,#122b5200 0%,#122b52f2 28%,#0d1f3c 100%);box-shadow:0 -12px 24px #030b19cc}
-#overlay .panel-cta .primary,#overlay .panel-cta #retry,#overlay .panel-cta #continue-max,#overlay .panel-cta #resume{margin:0}
+#overlay .panel-cta .primary,#overlay .panel-cta #retry,#overlay .panel-cta #continue-max,#overlay .panel-cta #resume,#overlay .panel-cta .secondary,#overlay .panel-cta #to-menu{margin:0}
 #overlay .panel-cta .upgrade-title{margin-top:0}
 #overlay .panel-cta .upgrade-list{max-height:28dvh;overflow:auto;margin:0}
 
@@ -127,7 +127,10 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 .title-card-action{margin-top:auto;align-self:flex-start;border:1px solid #FFE09A55;background:transparent;color:#FFE09A;border-radius:8px;padding:6px 10px;font-size:12px;min-height:32px;font-weight:700}
 .title-card.equipped .title-card-action{border-color:#7797b855;color:#AABED8}
 .titles-dialog .title-card-action{min-height:32px;padding:6px 10px}
-.title-unlock-note{margin:8px 0 0;font-size:13px;color:#9BFFE6;font-weight:700}
+.title-unlock-note{margin:8px 0 0;padding:8px 10px;border-radius:8px;border:1px solid #9BFFE644;background:#0b2a2a66;font-size:13px;color:#9BFFE6;font-weight:700}
+.title-unlock-note.pulse{animation:title-unlock-pulse .4s ease-out 1}
+@keyframes title-unlock-pulse{0%{transform:scale(1);border-color:#9BFFE644;box-shadow:0 0 0 #9BFFE600}45%{transform:scale(1.03);border-color:#9BFFE6;box-shadow:0 0 14px #9BFFE655}100%{transform:scale(1);border-color:#9BFFE644;box-shadow:0 0 0 #9BFFE600}}
+@media (prefers-reduced-motion:reduce){.title-unlock-note.pulse{animation:none}}
 .start-panel .title-chip{margin-top:2px;margin-bottom:6px}
 @media (prefers-reduced-motion:reduce){.title-card.is-new{animation:none}}
 
@@ -157,3 +160,9 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
  .daily-help{display:none}
  .daily-card{padding:10px 12px 10px}
 }
+
+/* P2: secondary menu CTA (navy ghost under primary) */
+.secondary,#to-menu{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;margin-top:8px;padding:12px 16px;border-radius:9px;border:1px solid #7399BB66;background:#0b1936a0;color:#AABED8;font:inherit;font-size:15px;font-weight:800;cursor:pointer}
+.secondary:hover,#to-menu:hover{border-color:#96C2F7;color:#E8F2FF;background:#122B52}
+#overlay .panel-cta .secondary,#overlay .panel-cta #to-menu{margin-top:8px}
+.daily-result-note.ok{border-radius:8px;padding:8px 10px;border:1px solid #9BFFE644;background:#0b2a2a66}

@@ -194,9 +194,9 @@ const TitleBook=(()=>{
  function unlockNoteHtml(){
   if(!lastNewUnlocks.length)return '';
   const names=lastNewUnlocks.map(t=>'「'+t.name+'」').join(' · ');
-  return '<p class="title-unlock-note">칭호 해금! '+names+'</p>';
+  return '<p class="title-unlock-note pulse">칭호 해금! '+names+'</p>';
  }
 
- return {init,noteRun,noteDailyClear,evaluate,open,equip,unequip,refreshChip,unlockNoteHtml,get state(){return state},TITLES};
+ return {init,noteRun,noteDailyClear,evaluate,open,equip,unequip,refreshChip,refreshHeaderDot,bindUi,unlockNoteHtml,get state(){return state},TITLES};
 })();
 if(typeof module!=='undefined')module.exports=TitleBook;
