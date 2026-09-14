@@ -74,12 +74,11 @@ function currentPitchPose(){
  return 'idle';
 }
 function drawPitcher(){
- // Pose frames are crop-ready 941×592 with transparent side letterbox. Fill solid blue first so stadium does not show through.
+ // Pose frames are crop-ready 941×592 with alpha; draw over stadium (no solid card).
  const pose=currentPitchPose();
  const frame=pitchPoses[pose];
  if(frame&&frame.naturalWidth){
-  ctx.fillStyle='#154796';
-  ctx.fillRect(0,116,480,302);
+  // Transparent pose on stadium — no solid letterbox card.
   ctx.drawImage(frame,0,0,frame.naturalWidth,frame.naturalHeight,0,116,480,302);
  }else if(pitcher.complete&&pitcher.naturalWidth){
   ctx.drawImage(pitcher,0,143,941,592,0,116,480,302);
