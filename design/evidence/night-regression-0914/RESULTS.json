@@ -1,0 +1,140 @@
+{
+  "total": 26,
+  "passed": 26,
+  "failed": 0,
+  "failures": [],
+  "results": [
+    {
+      "name": "start CTA visible",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "SPACE hint under CTA",
+      "ok": true,
+      "detail": "PC: 방향키 / WASD 이동 · SPACE 스윙"
+    },
+    {
+      "name": "title chip present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "daily card present",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "daily goal stage_2 today",
+      "ok": true,
+      "detail": "TODAY'S MATCH 시드 · 09.14 오늘의 승부 목표 · 스테이지 2 도달 보상 · 「일일 타자」 칭호 오늘 한 판 매일 자정(KST) 시드 갱신 · 랭킹 「오늘」에 기록"
+    },
+    {
+      "name": "sticky CTA pinned on short viewport",
+      "ok": true,
+      "detail": "y1=455.8125 y2=455.8125"
+    },
+    {
+      "name": "SPACE hint still visible short",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "titles catalog opens",
+      "ok": true,
+      "detail": "{\"open\":true,\"cards\":4}"
+    },
+    {
+      "name": "titles catalog closes",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "header titles-open works",
+      "ok": true,
+      "detail": "{\"open\":true,\"cards\":4}"
+    },
+    {
+      "name": "daily button ready after wipe",
+      "ok": true,
+      "detail": "오늘 한 판"
+    },
+    {
+      "name": "daily mode active in play",
+      "ok": true,
+      "detail": "{\"playing\":true,\"daily\":true}"
+    },
+    {
+      "name": "result daily clear note",
+      "ok": true,
+      "detail": "오늘의 승부 클리어! · 칭호 해금"
+    },
+    {
+      "name": "title unlock note present",
+      "ok": true,
+      "detail": "{\"text\":\"칭호 해금! 「일일 타자」\",\"pulse\":true}"
+    },
+    {
+      "name": "LS daily.cleared true",
+      "ok": true,
+      "detail": "{\"day\":\"2026-09-14\",\"cleared\":true,\"bestPerfects\":1,\"bestStage\":2,\"runs\":1}"
+    },
+    {
+      "name": "LS daily_batter unlocked",
+      "ok": true,
+      "detail": "[\"first_perfect\",\"daily_batter\"]"
+    },
+    {
+      "name": "board entry uses sessionPerfects not segment",
+      "ok": true,
+      "detail": "{\"goal\":\"perfect_3\",\"r1cleared\":false,\"r2cleared\":true,\"session\":3,\"ok\":true,\"rowPerfects\":3,\"rowNick\":\"야간테스터\",\"boardLen\":1}"
+    },
+    {
+      "name": "ranking today shows session PERFECTS",
+      "ok": true,
+      "detail": "{\"open\":true,\"sub\":\"오늘 시드 기준 · 목표 달성자만\",\"hasNick\":true,\"hasPerfects3\":true,\"boardPerfects\":3,\"text\":\"순위 닉네임 목표 PERFECT 1 야간테스터 PERFECT 3회 3\"}"
+    },
+    {
+      "name": "menu shows 오늘 클리어 ✓",
+      "ok": true,
+      "detail": "오늘 클리어 ✓"
+    },
+    {
+      "name": "daily button disabled after clear",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "catalog 일일 타자 unlocked",
+      "ok": true,
+      "detail": "{\"found\":true,\"locked\":false,\"text\":\"📅일일타자달성·오늘의승부장착\"}"
+    },
+    {
+      "name": "re-enter normal play OK",
+      "ok": true,
+      "detail": "{\"playing\":true,\"daily\":false}"
+    },
+    {
+      "name": "after pause→menu still cleared",
+      "ok": true,
+      "detail": "오늘 클리어 ✓"
+    },
+    {
+      "name": "loadnote SPACE kbd present",
+      "ok": true,
+      "detail": "{\"kbdText\":\"SPACE\",\"reduceUnlock\":true,\"rankBtnOk\":true,\"rankingWorks\":true}"
+    },
+    {
+      "name": "reduce-motion title-unlock CSS",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "ranking-start rebound on menu",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "url": "http://127.0.0.1:8765/?v=1789388828099",
+  "at": "2026-09-14T12:27:46.358Z"
+}
