@@ -184,3 +184,11 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 .secondary:hover,#to-menu:hover{border-color:#96C2F7;color:#E8F2FF;background:#122B52}
 #overlay .panel-cta .secondary,#overlay .panel-cta #to-menu{margin-top:8px}
 .daily-result-note.ok{border-radius:8px;padding:8px 10px;border:1px solid #9BFFE644;background:#0b2a2a66}
+
+/* Result panel polish v1 (design/refs/result-panel-polish-v1.md) */
+#overlay .panel:not(.start-panel){background:linear-gradient(150deg,#122B52f7,#080F25fc);border:1px solid #6087CA88;border-radius:14px;box-shadow:0 16px 40px #0009}
+#overlay .panel:not(.start-panel) .result-grid{gap:12px;margin:16px 0}
+#overlay .panel:not(.start-panel) .result-grid b{color:#FFE09A;text-shadow:0 0 12px #FFE09A44}
+#overlay .panel:not(.start-panel) .panel-cta{padding:12px 0 max(16px,env(safe-area-inset-bottom));gap:8px;display:flex;flex-direction:column}
+#overlay .panel:not(.start-panel) .panel-cta .primary,#overlay .panel:not(.start-panel) .panel-cta #retry,#overlay .panel:not(.start-panel) .panel-cta #continue-max{background:linear-gradient(100deg,#416EFF,#775CFF);color:#fff;border-radius:10px;box-shadow:0 8px 20px #416EFF44}
+#overlay .panel:not(.start-panel) .panel-cta .secondary,#overlay .panel:not(.start-panel) .panel-cta #to-menu{margin-top:8px}
