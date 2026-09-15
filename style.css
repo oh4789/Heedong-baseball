@@ -241,3 +241,33 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 .fail-line-tip{display:flex;align-items:flex-start;gap:6px;margin:10px 0 0;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);font-size:12px;line-height:1.45;color:#c8d6e8}
 .fail-line-tip-icon{flex:0 0 auto;line-height:1.2}
 #overlay .panel:not(.start-panel) .fail-line-card{max-width:100%;box-sizing:border-box}
+
+/* P1: boss phase HP chunks + stem banner (design/refs/phase-hp-chunks-v1.md, boss-phase-banner-v1.md) */
+.boss-phase-bar{display:flex;align-items:stretch;gap:0;position:relative;height:12px;overflow:visible;border:1px solid #c7ddf355;border-radius:3px;background:#040812e6;box-shadow:0 0 8px #000,inset 0 0 0 1px #08132988}
+.boss-phase-bar .boss-chunk{flex:1 1 0;position:relative;overflow:hidden;min-width:0;background:#050810;border-right:1px solid #1a274488}
+.boss-phase-bar .boss-chunk[data-chunk="3"]{border-right:0}
+.boss-phase-bar .boss-chunk i{display:block;height:100%;width:100%;margin:0;border:0;border-radius:0;background-image:linear-gradient(90deg,#316DFF,#AB90FF);background-size:300% 100%;box-shadow:0 0 10px #316DFF55;transition:width .12s ease-out}
+.boss-phase-bar .boss-chunk[data-chunk="1"] i{background-position:0% 0}
+.boss-phase-bar .boss-chunk[data-chunk="2"] i{background-position:50% 0}
+.boss-phase-bar .boss-chunk[data-chunk="3"] i{background-position:100% 0}
+.boss-phase-bar .boss-chunk.empty{background:
+  linear-gradient(125deg,transparent 42%,#2a3348 43%,#2a3348 45%,transparent 46%),
+  linear-gradient(55deg,transparent 48%,#1c2436 49%,#1c2436 51%,transparent 52%),
+  linear-gradient(160deg,transparent 30%,#252e42 31%,#252e42 32.5%,transparent 33.5%),
+  #050810}
+.boss-phase-bar .boss-chunk.empty i{width:0!important;box-shadow:none;transition:none}
+.boss-phase-bar .boss-chunk.flash::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#FFFFFF,#FF986E,#FFFFFF00);animation:chunk-break-flash .38s ease-out forwards;pointer-events:none;z-index:2}
+@keyframes chunk-break-flash{0%{opacity:1;mix-blend-mode:screen}40%{opacity:.95}100%{opacity:0}}
+.boss-notch{position:absolute;bottom:-6px;width:7px;height:7px;background:#C3A4FF;transform:translateX(-50%) rotate(45deg);box-shadow:0 0 8px #C3A4FF99;pointer-events:none;z-index:1}
+.phase-banner{position:absolute;top:max(12%,calc(env(safe-area-inset-top) + 72px));left:50%;transform:translateX(-50%) translateY(-6px);z-index:6;width:min(92%,360px);padding:14px 18px 12px;text-align:center;pointer-events:none;border-radius:10px;background:linear-gradient(180deg,#081329f2,#0a1830e8);border:1px solid #FFE09A88;box-shadow:0 0 0 1px #FF986E44,0 12px 28px #000a,inset 0 1px 0 #FFE09A22;backdrop-filter:blur(10px);opacity:0;visibility:hidden;transition:opacity .18s ease,transform .18s ease,visibility 0s linear .18s}
+.phase-banner.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);transition:opacity .18s ease,transform .18s ease,visibility 0s}
+.phase-banner[hidden]{display:none}
+.phase-banner.show[hidden]{display:block}
+#phase-banner-title{display:block;font-size:clamp(22px,6vw,28px);font-weight:1000;font-style:italic;letter-spacing:1px;color:#FFE09A;text-shadow:0 0 18px #FF986E66,0 2px 0 #081329;line-height:1.1}
+#phase-banner-line{margin:8px 0 0;font-size:13px;font-weight:700;color:#F7F3E8;letter-spacing:-.2px;text-shadow:0 1px 4px #000}
+#phase-banner-line::before,#phase-banner-line::after{content:" ✦ ";color:#FFE09A;font-size:11px}
+@media(prefers-reduced-motion:reduce){
+ .boss-phase-bar .boss-chunk i{transition:none}
+ .boss-phase-bar .boss-chunk.flash::after{animation:none;opacity:0}
+ .phase-banner{transition:none}
+}
