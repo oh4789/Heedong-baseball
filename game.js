@@ -210,6 +210,7 @@ function showStartMenu(){
  GameMusic.stop();
  clearInput();
  if(game.state==='playing'||game.state==='paused')game.state='ready';
+ clearOverlayPanelMode();
  const panel=$('#overlay .panel');
  panel.classList.add('start-panel');
  panel.innerHTML=`<div class="panel-body"><div class="menu-art" role="img" aria-label="희동이 보스 클로즈업"></div><span class="eyebrow">BEAT HEEDONG</span><h1>희동이를 이겨라</h1><button type="button" id="title-chip" class="title-chip" aria-label="칭호 없음 · 도감 열기"><span class="title-chip-text">칭호 없음 · 탭해서 고르기</span><span class="title-chip-chevron" aria-hidden="true">›</span></button><p class="sub">“내 공, 하나라도 제대로 쳐봐.”</p><div class="rules"><p><b>01</b><span>드래그해서 <strong>공 앞에 자리 잡기</strong></span></p><p><b>02</b><span>초록 원에 오면 <strong>손 떼서 스윙</strong></span></p><p><b>03</b><span><strong class="red">불꽃 마구</strong>는 옆으로 피하기</span></p></div><div id="personal-records"></div><div id="daily-match"></div><button type="button" class="ranking-open" id="ranking-start">공용 랭킹 보기</button><button type="button" id="intro-replay" class="intro-replay">오프닝 다시 보기</button></div><div class="panel-cta"><button class="primary" id="start" disabled>구장 준비 중…</button><p id="loadnote" class="keyboard">PC: 방향키 / WASD 이동 · <kbd>SPACE</kbd> 스윙</p></div>`;
@@ -237,9 +238,60 @@ function tryDefeatRetry(from){
  start('new');
  return true;
 }
-function end(){clearInput();GameMusic.stop();records.update(game.stage,game.perfects);TitleBook.noteRun({dodges:game.dodges,stage:game.stage,perfects:game.perfects});if(DailyMatch.isActive())DailyMatch.noteRun({stage:game.stage,perfects:game.perfects,won:game.state==='won'});const won=game.state==='won';const choices=won?game.getUpgradeChoices():[];const upgradeHtml=choices.length?'<p class="upgrade-title">강화 하나 선택 · 다음 승부에도 이어집니다</p><div class="upgrade-list">'+choices.map(key=>'<button class="upgrade" data-up="'+key+'"><b>'+BaseballGame.UPGRADE_DATA[key].name+' · Lv.'+(game.meta[key]||0)+'</b><small>'+nextUpgradeText(key)+'</small></button>').join('')+'</div>':'<p class="upgrade-title">모든 강화를 완성했어요!</p><button class="primary" id="continue-max">다음 승부로 →</button>';$('#overlay').classList.remove('hidden');$('#overlay .panel').classList.remove('start-panel');const resultBody=`<div class="story-art ${won?'scene-4':'scene-5'} result-art" role="img" aria-label="${won?'공을 받아친 타자':'쌍둥이의 협공에 놀란 타자'}"></div><span class="eyebrow">${won?'YOU WIN THE DUEL':'STRIKE BACK NEXT TIME'}</span><h1>${won?'희동이를 이겼다!':'다시 도전할까?'}</h1><p class="sub">${won?'다음 승부엔 더 강한 마구가 기다립니다.':'공을 끝까지 보고, 손을 떼보세요.'}</p><div class="result-grid"><div><b>${game.perfects}</b><small>PERFECT</small></div><div><b>${game.bestCombo}</b><small>최대 콤보</small></div><div><b>${Math.floor(game.time)}s</b><small>승부 시간</small></div></div><p class="detail">타격 ${game.hits}회 · 헛스윙 ${game.misses}회<br>랠리 ${game.rallyCount}회 · 불꽃 마구 회피 ${game.dodges}회</p>${failLineCardHtml(won)}${recordsHtml(true)}${TitleBook.unlockNoteHtml()}${DailyMatch.resultNoteHtml()}${SharedRanking.resultHtml()}`;const menuBtn='<button type="button" class="secondary" id="to-menu">시작 화면</button>';const resultCta=won?upgradeHtml+menuBtn:'<button class="primary" id="retry">다시 승부하기 <span>↻</span></button>'+menuBtn;$('#overlay .panel').innerHTML=`<div class="panel-body">${resultBody}</div><div class="panel-cta">${resultCta}</div>`;SharedRanking.bindResult($('#overlay .panel'),{stage:game.stage,perfects:game.perfects,daily:DailyMatch.isActive()&&DailyMatch.state.cleared});const goMenu=()=>{DailyMatch.beginNormal();showStartMenu()};$('#to-menu').onclick=goMenu;if(won){document.querySelectorAll('.upgrade').forEach(b=>b.onclick=()=>{if(game.chooseUpgrade(b.dataset.up))start('continue')});if(!choices.length)$('#continue-max').onclick=()=>start('continue')}else{
- defeatRetryAt=performance.now()+250;
+function inningStopHtml(){
+ return `<div class="panel-body inning-stop-body">
+  <div class="inning-stop-eyebrow" aria-hidden="true"><span class="inning-stop-rule"></span><span class="inning-stop-mark">⚾</span><span class="inning-stop-label">이닝 종료</span><span class="inning-stop-rule"></span></div>
+  <h1 class="inning-stop-q">한 이닝 더 할까?</h1>
+  <p class="inning-stop-tag">· INNING BREAK ·</p>
+  <div class="inning-stop-cta">
+   <button type="button" class="inning-stop-quit" id="inning-quit">그만</button>
+   <button type="button" class="inning-stop-more" id="inning-more">한 이닝 더</button>
+  </div>
+ </div>`;
+}
+function clearOverlayPanelMode(){
+ const overlay=$('#overlay');
  const panel=$('#overlay .panel');
+ overlay.classList.remove('inning-stop-overlay');
+ panel.classList.remove('start-panel','inning-stop');
+ panel.onclick=null;
+}
+function showInningStopModal(){
+ clearOverlayPanelMode();
+ const overlay=$('#overlay');
+ const panel=$('#overlay .panel');
+ overlay.classList.add('inning-stop-overlay');
+ panel.classList.add('inning-stop');
+ panel.innerHTML=inningStopHtml();
+ overlay.classList.remove('hidden');
+ $('#inning-quit').onclick=()=>{DailyMatch.beginNormal();showStartMenu()};
+ $('#inning-more').onclick=()=>showWinResult();
+}
+function showWinResult(){
+ clearOverlayPanelMode();
+ const choices=game.getUpgradeChoices();
+ const upgradeHtml=choices.length
+  ?'<p class="upgrade-title">강화 하나 선택 · 다음 승부에도 이어집니다</p><div class="upgrade-list">'+choices.map(key=>'<button class="upgrade" data-up="'+key+'"><b>'+BaseballGame.UPGRADE_DATA[key].name+' · Lv.'+(game.meta[key]||0)+'</b><small>'+nextUpgradeText(key)+'</small></button>').join('')+'</div>'
+  :'<p class="upgrade-title">모든 강화를 완성했어요!</p><button class="primary" id="continue-max">다음 승부로 →</button>';
+ const resultBody=`<div class="story-art scene-4 result-art" role="img" aria-label="공을 받아친 타자"></div><span class="eyebrow">YOU WIN THE DUEL</span><h1>희동이를 이겼다!</h1><p class="sub">다음 승부엔 더 강한 마구가 기다립니다.</p><div class="result-grid"><div><b>${game.perfects}</b><small>PERFECT</small></div><div><b>${game.bestCombo}</b><small>최대 콤보</small></div><div><b>${Math.floor(game.time)}s</b><small>승부 시간</small></div></div><p class="detail">타격 ${game.hits}회 · 헛스윙 ${game.misses}회<br>랠리 ${game.rallyCount}회 · 불꽃 마구 회피 ${game.dodges}회</p>${failLineCardHtml(true)}${recordsHtml(true)}${TitleBook.unlockNoteHtml()}${DailyMatch.resultNoteHtml()}${SharedRanking.resultHtml()}`;
+ const menuBtn='<button type="button" class="secondary" id="to-menu">시작 화면</button>';
+ $('#overlay').classList.remove('hidden');
+ $('#overlay .panel').innerHTML=`<div class="panel-body">${resultBody}</div><div class="panel-cta">${upgradeHtml}${menuBtn}</div>`;
+ SharedRanking.bindResult($('#overlay .panel'),{stage:game.stage,perfects:game.perfects,daily:DailyMatch.isActive()&&DailyMatch.state.cleared});
+ $('#to-menu').onclick=()=>{DailyMatch.beginNormal();showStartMenu()};
+ document.querySelectorAll('.upgrade').forEach(b=>b.onclick=()=>{if(game.chooseUpgrade(b.dataset.up))start('continue')});
+ if(!choices.length)$('#continue-max').onclick=()=>start('continue');
+}
+function showDefeatResult(){
+ clearOverlayPanelMode();
+ const resultBody=`<div class="story-art scene-5 result-art" role="img" aria-label="쌍둥이의 협공에 놀란 타자"></div><span class="eyebrow">STRIKE BACK NEXT TIME</span><h1>다시 도전할까?</h1><p class="sub">공을 끝까지 보고, 손을 떼보세요.</p><div class="result-grid"><div><b>${game.perfects}</b><small>PERFECT</small></div><div><b>${game.bestCombo}</b><small>최대 콤보</small></div><div><b>${Math.floor(game.time)}s</b><small>승부 시간</small></div></div><p class="detail">타격 ${game.hits}회 · 헛스윙 ${game.misses}회<br>랠리 ${game.rallyCount}회 · 불꽃 마구 회피 ${game.dodges}회</p>${failLineCardHtml(false)}${recordsHtml(true)}${TitleBook.unlockNoteHtml()}${DailyMatch.resultNoteHtml()}${SharedRanking.resultHtml()}`;
+ const menuBtn='<button type="button" class="secondary" id="to-menu">시작 화면</button>';
+ $('#overlay').classList.remove('hidden');
+ const panel=$('#overlay .panel');
+ panel.innerHTML=`<div class="panel-body">${resultBody}</div><div class="panel-cta"><button class="primary" id="retry">다시 승부하기 <span>↻</span></button>${menuBtn}</div>`;
+ SharedRanking.bindResult(panel,{stage:game.stage,perfects:game.perfects,daily:DailyMatch.isActive()&&DailyMatch.state.cleared});
+ $('#to-menu').onclick=()=>{DailyMatch.beginNormal();showStartMenu()};
+ defeatRetryAt=performance.now()+250;
  const onRetry=e=>{if(e){e.preventDefault();e.stopPropagation()}tryDefeatRetry('btn')};
  $('#retry').onclick=onRetry;
  // Tap anywhere on panel/CTA except menu/secondary/upgrade areas
@@ -248,8 +300,18 @@ function end(){clearInput();GameMusic.stop();records.update(game.stage,game.perf
   if(block&&block.id!=='retry')return;
   tryDefeatRetry('panel');
  };
-}}
-function pause(){if(!$('#cinematic').classList.contains('hidden'))return;if(game.state==='playing'){game.state='paused';clearInput();GameMusic.stop();$('#overlay').classList.remove('hidden');$('#overlay .panel').classList.remove('start-panel');$('#overlay .panel').innerHTML='<div class="panel-body"><span class="eyebrow">TIME OUT</span><h1>잠깐 타임!</h1><p class="detail">다음 공도 받아칠 준비 됐나요?</p></div><div class="panel-cta"><button class="primary" id="resume">승부 계속하기 <span>→</span></button><button type="button" class="secondary" id="to-menu">시작 화면</button></div>';$('#resume').onclick=()=>{game.state='playing';document.activeElement?.blur();previous=performance.now();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();$('#overlay').classList.add('hidden')};$('#to-menu').onclick=()=>{DailyMatch.beginNormal();showStartMenu()}}else if(game.state==='paused'){const r=$('#resume');if(r)r.click()}}
+}
+function end(){
+ clearInput();
+ GameMusic.stop();
+ records.update(game.stage,game.perfects);
+ TitleBook.noteRun({dodges:game.dodges,stage:game.stage,perfects:game.perfects});
+ if(DailyMatch.isActive())DailyMatch.noteRun({stage:game.stage,perfects:game.perfects,won:game.state==='won'});
+ // Soft exit: win first shows compact inning-stop CTA (records already committed).
+ if(game.state==='won'){showInningStopModal();return}
+ showDefeatResult();
+}
+function pause(){if(!$('#cinematic').classList.contains('hidden'))return;if(game.state==='playing'){game.state='paused';clearInput();GameMusic.stop();clearOverlayPanelMode();$('#overlay').classList.remove('hidden');$('#overlay .panel').innerHTML='<div class="panel-body"><span class="eyebrow">TIME OUT</span><h1>잠깐 타임!</h1><p class="detail">다음 공도 받아칠 준비 됐나요?</p></div><div class="panel-cta"><button class="primary" id="resume">승부 계속하기 <span>→</span></button><button type="button" class="secondary" id="to-menu">시작 화면</button></div>';$('#resume').onclick=()=>{game.state='playing';document.activeElement?.blur();previous=performance.now();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();$('#overlay').classList.add('hidden')};$('#to-menu').onclick=()=>{DailyMatch.beginNormal();showStartMenu()}}else if(game.state==='paused'){const r=$('#resume');if(r)r.click()}}
 $('#start').onclick=()=>{DailyMatch.beginNormal();start('new')};$('#pause').onclick=pause;$('#cinematic-skip').onclick=finishCinematic;$('#intro-replay').onclick=()=>playCinematic(true);$('#sound').onclick=()=>{muted=!muted;$('#sound').textContent=muted?'×':'♪';$('#sound').setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');$('#sound').setAttribute('aria-pressed',String(!muted));GameMusic.setMuted(muted);if(!muted){activateAudio();GameMusic.activate();if(!$('#cinematic').classList.contains('hidden'))GameMusic.startOpening();else if(game.state==='playing')GameMusic.startPlay()}};
 canvas.addEventListener('pointerdown',e=>{if(game.state!=='playing'||pointer)return;e.preventDefault();activateAudio();canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,x:e.clientX,y:e.clientY};aim={x:0,y:0}});canvas.addEventListener('pointermove',e=>{if(!pointer||e.pointerId!==pointer.id)return;const sx=W/canvas.clientWidth,sy=H/canvas.clientHeight;aim={x:(e.clientX-pointer.x)*sx,y:(e.clientY-pointer.y)*sy};const l=Math.hypot(aim.x,aim.y);if(l>48){pointer.x=e.clientX-aim.x/l*48/sx;pointer.y=e.clientY-aim.y/l*48/sy}});canvas.addEventListener('pointerup',e=>{if(!pointer||e.pointerId!==pointer.id)return;clearInput();game.swing();processEvents()});function cancel(e){if(pointer?.id===e.pointerId)clearInput()}canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);
 addEventListener('keydown',e=>{if(!$('#cinematic').classList.contains('hidden')||e.target?.closest?.('input,textarea,dialog,button'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys[e.key.toLowerCase()]=true;if(e.code==='Space'&&!e.repeat){if(tryDefeatRetry('space'))return;activateAudio();game.swing();processEvents()}if(e.key==='Escape'&&!e.repeat)pause()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{if(game.state==='playing')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&game.state==='playing')pause()});

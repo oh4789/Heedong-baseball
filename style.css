@@ -271,3 +271,129 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
  .boss-phase-bar .boss-chunk.flash::after{animation:none;opacity:0}
  .phase-banner{transition:none}
 }
+
+/* Inning-stop soft exit CTA v1 (design/refs/inning-stop-cta-v1.md) */
+#overlay.inning-stop-overlay{
+ align-items:center;
+ justify-content:center;
+ padding:24px 20px max(24px,env(safe-area-inset-bottom));
+ background:#081329b8;
+ backdrop-filter:blur(8px);
+ -webkit-backdrop-filter:blur(8px);
+}
+#overlay .panel.inning-stop{
+ width:min(100%,340px);
+ max-height:none;
+ margin:auto;
+ padding:26px 20px 20px;
+ border-radius:22px;
+ background:linear-gradient(155deg,#122b52c9,#081329e6 70%);
+ border:1px solid #A8C8E866;
+ box-shadow:0 18px 48px #000a,inset 0 1px 0 #ffffff22;
+ backdrop-filter:blur(18px);
+ -webkit-backdrop-filter:blur(18px);
+ display:block;
+ overflow:visible;
+ text-align:center;
+}
+#overlay .panel.inning-stop .panel-body,
+#overlay .panel.inning-stop .inning-stop-body{
+ overflow:visible;
+ flex:none;
+ min-height:0;
+ padding:0;
+}
+.inning-stop-eyebrow{
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ gap:8px;
+ margin:0 0 16px;
+ color:#F7F3E8;
+}
+.inning-stop-rule{
+ flex:1 1 36px;
+ max-width:56px;
+ height:1px;
+ background:linear-gradient(90deg,transparent,#F7F3E855 20%,#F7F3E855 80%,transparent);
+ position:relative;
+}
+.inning-stop-rule::after{
+ content:"";
+ position:absolute;
+ top:50%;
+ width:5px;height:5px;
+ background:#F7F3E8;
+ transform:translateY(-50%) rotate(45deg);
+ opacity:.7;
+}
+.inning-stop-rule:first-child::after{right:-2px}
+.inning-stop-rule:last-child::after{left:-2px}
+.inning-stop-mark{
+ font-size:18px;
+ line-height:1;
+ filter:drop-shadow(0 1px 2px #0008);
+}
+.inning-stop-label{
+ font-size:13px;
+ font-weight:800;
+ letter-spacing:1.5px;
+ white-space:nowrap;
+}
+.inning-stop-q{
+ margin:0 0 8px;
+ font-size:clamp(24px,6.5vw,30px);
+ font-weight:1000;
+ font-style:normal;
+ letter-spacing:-.8px;
+ line-height:1.25;
+ color:#F7F3E8;
+ text-shadow:0 2px 8px #0006;
+}
+.inning-stop-tag{
+ margin:0 0 4px;
+ font-size:10px;
+ font-weight:700;
+ letter-spacing:2px;
+ color:#7BA3D4;
+ opacity:.85;
+}
+.inning-stop-cta{
+ display:flex;
+ gap:10px;
+ margin-top:20px;
+ align-items:stretch;
+}
+.inning-stop-quit,
+.inning-stop-more{
+ flex:1 1 0;
+ min-height:48px;
+ border-radius:999px;
+ font:inherit;
+ font-size:15px;
+ font-weight:900;
+ cursor:pointer;
+ padding:12px 14px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+}
+.inning-stop-quit{
+ border:1.5px solid #FF986E;
+ background:transparent;
+ color:#FF986E;
+ box-shadow:none;
+}
+.inning-stop-quit:hover{background:#FF986E18;border-color:#FFB08A;color:#FFB08A}
+.inning-stop-more{
+ border:0;
+ background:#FFE09A;
+ color:#081329;
+ box-shadow:0 8px 20px #FFE09A33;
+}
+.inning-stop-more:hover{filter:brightness(1.05)}
+#overlay .panel.inning-stop .inning-stop-cta .inning-stop-quit,
+#overlay .panel.inning-stop .inning-stop-cta .inning-stop-more{margin:0;width:auto}
+@media(prefers-reduced-motion:reduce){
+ #overlay.inning-stop-overlay{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
