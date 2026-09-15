@@ -438,6 +438,82 @@ function drawBatter(){
  }
  ctx.restore();
 }
+
+function windupStrengthTier(dur){
+ // Display-only length cue from windup duration (judgment untouched).
+ if(dur>=1.05)return 'weak';
+ if(dur>=0.75)return 'mid';
+ return 'strong';
+}
+function drawWindupStrengthBar(cx,cy,color,tier){
+ // Design telegraph-shape-lang v1: 약/중/강 length bars under mound cue
+ const fill={weak:.35,mid:.65,strong:.95}[tier]||.65;
+ const bw=38,bh=4.5,x=cx-bw/2,y=cy+26;
+ ctx.save();
+ ctx.globalAlpha=.28;ctx.fillStyle=color;
+ ctx.beginPath();ctx.moveTo(x+2,y);ctx.arcTo(x+bw,y,x+bw,y+bh,2);ctx.arcTo(x+bw,y+bh,x,y+bh,2);ctx.arcTo(x,y+bh,x,y,2);ctx.arcTo(x,y,x+bw,y,2);ctx.closePath();ctx.fill();
+ ctx.globalAlpha=.88;ctx.fillStyle=color;ctx.shadowColor=color;ctx.shadowBlur=6;
+ const fw=Math.max(4,bw*fill);
+ ctx.beginPath();ctx.moveTo(x+2,y);ctx.arcTo(x+fw,y,x+fw,y+bh,2);ctx.arcTo(x+fw,y+bh,x,y+bh,2);ctx.arcTo(x,y+bh,x,y,2);ctx.arcTo(x,y,x+fw,y,2);ctx.closePath();ctx.fill();
+ ctx.shadowBlur=0;ctx.globalAlpha=.7;ctx.fillStyle=color;ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.textBaseline='top';
+ ctx.fillText({weak:'약',mid:'중',strong:'강'}[tier]||'',cx,y+bh+2);
+ ctx.restore();
+}
+function drawTelegraphLane(cx,cy,remain,pulse){
+ // LANE · mint vertical corridor + dashed guides (slider)
+ const col='#9BFFE6';
+ const h=28+(1-remain)*18,w=12+(1-remain)*4;
+ ctx.save();
+ ctx.strokeStyle=col;ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=10;
+ ctx.globalAlpha=.22+pulse*.25;
+ ctx.beginPath();
+ const x=cx-w/2,y=cy-h/2,r=w/2;
+ ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+ ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+ ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+ ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();ctx.fill();
+ ctx.globalAlpha=.7+Math.sin(visualTime*14)*.15;ctx.lineWidth=2.2;ctx.stroke();
+ ctx.shadowBlur=0;ctx.setLineDash([5,5]);ctx.lineWidth=1.4;ctx.globalAlpha=.55+pulse*.2;
+ const guide=18+(1-remain)*6;
+ ctx.beginPath();ctx.moveTo(cx-guide,cy-h*.55);ctx.lineTo(cx-guide,cy+h*.55);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(cx+guide,cy-h*.55);ctx.lineTo(cx+guide,cy+h*.55);ctx.stroke();
+ ctx.setLineDash([]);ctx.restore();
+ return col;
+}
+function drawTelegraphCircle(cx,cy,remain,pulse){
+ // CIRCLE · soft coral ring (fast / default non-fire); distinct from fire #FF7A45
+ const col='#FF986E';
+ const R=14+(1-remain)*12;
+ ctx.save();
+ ctx.strokeStyle=col;ctx.shadowColor=col;ctx.shadowBlur=12;
+ ctx.globalAlpha=.45+Math.sin(visualTime*16)*.18;ctx.lineWidth=3.2;
+ ctx.beginPath();ctx.arc(cx,cy,R,0,7);ctx.stroke();
+ ctx.shadowBlur=0;ctx.globalAlpha=.2+pulse*.2;ctx.fillStyle=col;
+ ctx.beginPath();ctx.arc(cx,cy,R*.42,0,7);ctx.fill();
+ ctx.restore();
+ return col;
+}
+function drawTelegraphPulse(cx,cy,remain,pulse){
+ // PULSE · purple expanding arcs (slow / changeup-like)
+ const col='#C3A4FF';
+ const base=10+(1-remain)*10;
+ ctx.save();
+ ctx.strokeStyle=col;ctx.shadowColor=col;ctx.shadowBlur=10;ctx.lineCap='round';
+ for(let i=0;i<3;i++){
+  const R=base+i*9+Math.sin(visualTime*10+i)*.8;
+  const a=.55+pulse*.35-i*.12;
+  ctx.globalAlpha=Math.max(.15,a);ctx.lineWidth=2.4-i*.35;
+  // Left expanding wave
+  ctx.beginPath();ctx.arc(cx,cy,R,Math.PI*.55,Math.PI*1.45);ctx.stroke();
+  // Right expanding wave
+  ctx.beginPath();ctx.arc(cx,cy,R,-Math.PI*.45,Math.PI*.45);ctx.stroke();
+ }
+ ctx.shadowBlur=0;ctx.globalAlpha=.5+pulse*.3;ctx.fillStyle=col;
+ ctx.beginPath();ctx.arc(cx,cy,4.5,0,7);ctx.fill();
+ ctx.restore();
+ return col;
+}
+
 function draw(){
  ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
  ctx.fillStyle='#102336';ctx.fillRect(0,0,W,H);ctx.save();
@@ -503,8 +579,16 @@ function draw(){
    }
    ctx.globalAlpha=1;ctx.shadowBlur=0;ctx.textBaseline='alphabetic';
   }else{
-   // Normal pitches keep yellow cue
-   ctx.fillStyle='#fff0b9';ctx.globalAlpha=pulse;ctx.beginPath();ctx.arc(240,290,9+(1-remain)*9,0,7);ctx.fill();ctx.globalAlpha=1;
+   // Telegraph shape lang v1 (visual only): slider→LANE, slow→PULSE, fast/default→CIRCLE
+   const cx=240,cy=290;
+   const wType=game.windup.type||'fast';
+   const wPat=game.windup.pattern||'';
+   let col='#FF986E';
+   if(wType==='slider'||wPat==='slider')col=drawTelegraphLane(cx,cy,remain,pulse);
+   else if(wType==='slow'||wPat==='changeFast')col=drawTelegraphPulse(cx,cy,remain,pulse);
+   else col=drawTelegraphCircle(cx,cy,remain,pulse);
+   drawWindupStrengthBar(cx,cy,col,windupStrengthTier(dur));
+   ctx.globalAlpha=1;ctx.shadowBlur=0;ctx.textBaseline='alphabetic';
   }
  }
  drawBatter();
