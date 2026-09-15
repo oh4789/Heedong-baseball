@@ -445,7 +445,7 @@ function end(){
 function gestureOptsHtml(){
  const hold=holdLockOn(),ftue=ftueGuidePrefOn(),sil=easySilhouetteOn();
  const row=(id,label,on)=>`<div class="gesture-opt-row"><div class="gesture-opt-label">${label}</div><button type="button" class="gesture-toggle${on?' is-on':''}" id="${id}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"><span class="gesture-toggle-knob" aria-hidden="true"></span><span class="gesture-toggle-text">${on?'ON':'OFF'}</span></button></div>`;
- return `<div class="panel-body gesture-opts-body"><div class="gesture-opts-head"><span class="gesture-opts-icon" aria-hidden="true">☝</span><div><span class="eyebrow">GESTURE OPT</span><h1 class="gesture-opts-title">제스처 옵션</h1></div><button type="button" class="gesture-opts-close" id="gesture-opts-close" aria-label="닫기">×</button></div><div class="gesture-opt-list">${row('opt-hold-lock','홀드 록 (조준 고정)',hold)}${row('opt-ftue-guide','FTUE 손 가이드',ftue)}${row('opt-easy-sil','쉬운 구 실루엣',sil)}</div><p class="gesture-opts-hint">홀드 록 ON: 누르는 동안 민트 수직 조준선 · 손 떼면 스윙</p></div><div class="panel-cta"><button type="button" class="primary" id="gesture-opts-done">확인 <span>→</span></button></div>`;
+ return `<div class="panel-body gesture-opts-body"><div class="gesture-opts-head"><span class="gesture-opts-icon" aria-hidden="true">☝</span><div><span class="eyebrow">GESTURE OPT</span><h1 class="gesture-opts-title">제스처 옵션</h1></div><button type="button" class="gesture-opts-close" id="gesture-opts-close" aria-label="닫기">×</button></div><div class="gesture-opt-list">${row('opt-hold-lock','홀드 록 (조준 고정)',hold)}${row('opt-ftue-guide','FTUE 손 가이드',ftue)}${row('opt-easy-sil','쉬운 구 실루엣',sil)}</div><p class="gesture-opts-hint">홀드 록 ON: 민트 조준선 · 손 떼면 스윙 · 쉬운 구 실루엣 ON: 민트 아우라·조금 큰 공</p></div><div class="panel-cta"><button type="button" class="primary" id="gesture-opts-done">확인 <span>→</span></button></div>`;
 }
 function bindGestureOptToggles(){
  const hold=$('#opt-hold-lock'),ftue=$('#opt-ftue-guide'),sil=$('#opt-easy-sil');
@@ -690,9 +690,27 @@ function draw(){
  drawBatter();
  for(const b of game.balls){
  if(b.t<0)continue;
- const fire=b.type==='fire',color=fire?'#FF7A45':b.twin?'#e4a6ff':b.type==='slider'?'#82ffd0':b.type==='slow'?'#b5e8ff':'#fff4df';
- const r=8+Math.min(1,b.t/b.duration)*5;
- ctx.strokeStyle=fire?'#FF5A2A66':b.type==='slow'?'#a8d9ff60':'#fff1cc60';ctx.lineWidth=fire?14:4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(b.x-(b.tx-240)*.05,b.y-(fire?63:28));ctx.lineTo(b.x,b.y);ctx.stroke();
+ const fire=b.type==='fire',easy=easySilhouetteOn();
+ let color=fire?'#FF7A45':b.twin?'#e4a6ff':b.type==='slider'?'#82ffd0':b.type==='slow'?'#b5e8ff':'#fff4df';
+ if(easy&&!fire)color=b.twin?'#dcc4ff':b.type==='slider'?'#9BFFE6':b.type==='slow'?'#c5f0ff':'#E8FFF6';
+ const rBase=8+Math.min(1,b.t/b.duration)*5;
+ const r=easy?rBase*1.2:rBase; // visual-only size; hitbox unchanged
+ // Motion trail: OFF softens/skips non-fire trail; fire keeps telegraph cue
+ if(fire||!easy){
+  ctx.strokeStyle=fire?'#FF5A2A66':b.type==='slow'?'#a8d9ff60':'#fff1cc60';ctx.lineWidth=fire?14:4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(b.x-(b.tx-240)*.05,b.y-(fire?63:28));ctx.lineTo(b.x,b.y);ctx.stroke();
+ }else{
+  // Easy silhouette: faint mint whisper trail (no sharp motion blur)
+  ctx.strokeStyle='#9BFFE622';ctx.lineWidth=2;ctx.lineCap='round';ctx.globalAlpha=.45;
+  ctx.beginPath();ctx.moveTo(b.x-(b.tx-240)*.03,b.y-14);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.globalAlpha=1;
+ }
+ if(easy){
+  // Soft mint #9BFFE6 clarity halo under/around ball (draw-only)
+  ctx.save();
+  ctx.globalAlpha=.28;ctx.fillStyle='#9BFFE6';ctx.shadowColor='#9BFFE6';ctx.shadowBlur=22;
+  ctx.beginPath();ctx.arc(b.x,b.y,r*1.75,0,7);ctx.fill();
+  ctx.shadowBlur=12;ctx.globalAlpha=.42;ctx.beginPath();ctx.arc(b.x,b.y,r*1.35,0,7);ctx.fill();
+  ctx.restore();
+ }
  if(fire){for(let j=0;j<5;j++){const h=20+j*11;ctx.fillStyle=j%2?'#FFD25B99':'#FF5A2A88';ctx.beginPath();ctx.arc(b.x+Math.sin(visualTime*21+j)*j*1.4,b.y-h,Math.max(1,7-j),0,7);ctx.fill()}}
  ball(b.x,b.y,r,color,fire);
  if(fire&&b.y>420){
