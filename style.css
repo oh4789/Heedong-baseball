@@ -226,3 +226,18 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
 .title-card-action{border-color:#FFE09A88}
 .title-card.equipped{box-shadow:0 0 14px #FFE09A55}
 .titles-grid{gap:10px}
+
+/* Fail-line review card v1 (design/refs/fail-line-card-v1.md) — stats only, no Early/Late */
+.fail-line-card{margin:10px 0 8px;padding:12px 12px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:#0a0e14;text-align:left;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.fail-line-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.06)}
+.fail-line-title{font-size:13px;font-weight:800;color:#f7f3e8;letter-spacing:-.2px}
+.fail-line-mark{color:#64ffda;font-size:12px;line-height:1;opacity:.9}
+.fail-line-stats{display:flex;flex-wrap:wrap;align-items:center;gap:6px 4px}
+.fail-line-sep{color:#7a8fa8;font-size:12px;font-weight:700;padding:0 2px}
+.fail-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:-.2px;background:#05080e;border:1px solid #5a6b7e;color:#e8f2ff;white-space:nowrap}
+.fail-chip-fire{border-color:#FF5A2A;color:#FFC9A8;box-shadow:0 0 10px #FF5A2A22}
+.fail-chip-perfect{border-color:#64ffda;color:#b8fff0;box-shadow:0 0 10px #64ffda22}
+.fail-chip-miss{border-color:#ff7a6e;color:#ffc4bc;box-shadow:0 0 10px #ff7a6e18}
+.fail-line-tip{display:flex;align-items:flex-start;gap:6px;margin:10px 0 0;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);font-size:12px;line-height:1.45;color:#c8d6e8}
+.fail-line-tip-icon{flex:0 0 auto;line-height:1.2}
+#overlay .panel:not(.start-panel) .fail-line-card{max-width:100%;box-sizing:border-box}
