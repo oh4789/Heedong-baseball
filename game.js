@@ -4,7 +4,16 @@ let fireCoachShown=false;let perfectStreak=0;let defeatRetryAt=0;
 let phaseChunkLast=3,phaseBannerTime=0;
 const PHASE_LINES={2:'희동이: 이제 진지하게 간다',3:'희동이: 끝까지 붙어보자'};
 const FTUE_KEY='beat-heedong.ftue-hitzone-v1';
+const OPT_HOLD_LOCK='beat-heedong.opt-hold-lock';
+const OPT_EASY_SIL='beat-heedong.opt-easy-silhouette';
 let ftueActive=false,ftueFade=0,ftuePlayTime=0,ftuePitchCount=0;
+let gestureOptsReturn=null;
+function getOptFlag(key,def='0'){try{const v=localStorage.getItem(key);return v==='1'||v==='0'?v:def}catch{return def}}
+function setOptFlag(key,on){try{localStorage.setItem(key,on?'1':'0')}catch{}}
+function holdLockOn(){return getOptFlag(OPT_HOLD_LOCK)==='1'}
+function easySilhouetteOn(){return getOptFlag(OPT_EASY_SIL)==='1'}
+function ftueGuidePrefOn(){return !ftueSeen()}
+function setFtueGuidePref(on){try{if(on)localStorage.removeItem(FTUE_KEY);else localStorage.setItem(FTUE_KEY,'1')}catch{}}
 // Heedong taunt pool for damage/whiff reactions (engine emits fixed lines; diversify here)
 const HEEDONG_TAUNTS=['벌써 휘둘렀어?','이번 공은 내 거야.','너무 서두르네~','내 마구는 어때?','아직 멀었어!','그게 최선이야?','눈에 불을 켜봐!'];
 function pickHeedongTaunt(fallback){
@@ -93,6 +102,53 @@ function drawFtueHand(x,y,ghost){
   for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(8+i*1.5,4+i*7,4.5,5.5,0,0,7);ctx.fill()}
  }
  ctx.setLineDash([]);ctx.restore();
+}
+
+function drawHoldLockAim(){
+ if(game.state!=='playing')return;
+ const on=holdLockOn();
+ if(!on)return; // OFF: no lock UI (keep current controls visual only)
+ if(!pointer)return; // show mint guide only while held
+ const z=game.zone;
+ const x=z.x;
+ const yTop=210,yMid=z.y,yBot=Math.min(760,game.player.y+36);
+ const mint='#9BFFE6';
+ ctx.save();
+ // Vertical solid mint guide through batter/zone X
+ ctx.strokeStyle=mint;ctx.shadowColor=mint;ctx.shadowBlur=10;ctx.lineWidth=2;ctx.globalAlpha=.92;
+ ctx.beginPath();ctx.moveTo(x,yTop);ctx.lineTo(x,yBot);ctx.stroke();
+ ctx.shadowBlur=0;
+ // Hollow marker circles (top / zone / plate)
+ for(const yy of [yTop+8,yMid,yBot-6]){
+  ctx.strokeStyle=mint;ctx.lineWidth=2;ctx.globalAlpha=.95;
+  ctx.beginPath();ctx.arc(x,yy,5.5,0,7);ctx.stroke();
+ }
+ // Corner brackets around hit zone
+ const hw=game.getWideReach?game.getWideReach()*.55:28, hh=28;
+ ctx.strokeStyle=mint;ctx.lineWidth=2.4;ctx.lineCap='square';ctx.globalAlpha=.95;
+ const L=10;
+ function corner(cx,cy,sx,sy){
+  ctx.beginPath();ctx.moveTo(cx+sx*L,cy);ctx.lineTo(cx,cy);ctx.lineTo(cx,cy+sy*L);ctx.stroke();
+ }
+ corner(x-hw,yMid-hh,1,1);corner(x+hw,yMid-hh,-1,1);corner(x-hw,yMid+hh,1,-1);corner(x+hw,yMid+hh,-1,-1);
+ // Lock chip: 조준 고정
+ const label='조준 고정';
+ ctx.font='bold 13px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+ const tw=ctx.measureText(label).width;
+ const cw=tw+46,ch=30,cx=W/2,cy=Math.min(H-92,yBot+28);
+ ctx.globalAlpha=.96;ctx.fillStyle=mint;ctx.strokeStyle='#08132966';ctx.lineWidth=1;
+ const r=14,x0=cx-cw/2,y0=cy-ch/2;
+ ctx.beginPath();
+ ctx.moveTo(x0+r,y0);ctx.arcTo(x0+cw,y0,x0+cw,y0+ch,r);ctx.arcTo(x0+cw,y0+ch,x0,y0+ch,r);
+ ctx.arcTo(x0,y0+ch,x0,y0,r);ctx.arcTo(x0,y0,x0+cw,y0,r);ctx.closePath();ctx.fill();
+ // padlock icon
+ ctx.fillStyle='#081329';ctx.strokeStyle='#081329';ctx.lineWidth=1.6;
+ const lx=cx-tw/2-14,ly=cy;
+ ctx.beginPath();ctx.arc(lx,ly-4,4.2,Math.PI,0);ctx.stroke();
+ ctx.fillRect(lx-5,ly-2,10,9);
+ ctx.fillStyle='#9BFFE6';ctx.beginPath();ctx.arc(lx,ly+1.5,1.4,0,7);ctx.fill();
+ ctx.fillStyle='#081329';ctx.fillText(label,cx+6,cy+0.5);
+ ctx.restore();
 }
 function drawFtueGuide(){
  if(!ftueActive&&ftueFade<=0)return;
@@ -286,7 +342,7 @@ function showStartMenu(){
  clearOverlayPanelMode();
  const panel=$('#overlay .panel');
  panel.classList.add('start-panel');
- panel.innerHTML=`<div class="panel-body"><div class="menu-art" role="img" aria-label="희동이 보스 클로즈업"></div><span class="eyebrow">BEAT HEEDONG</span><h1>희동이를 이겨라</h1><button type="button" id="title-chip" class="title-chip" aria-label="칭호 없음 · 도감 열기"><span class="title-chip-text">칭호 없음 · 탭해서 고르기</span><span class="title-chip-chevron" aria-hidden="true">›</span></button><p class="sub">“내 공, 하나라도 제대로 쳐봐.”</p><div class="rules"><p><b>01</b><span>드래그해서 <strong>공 앞에 자리 잡기</strong></span></p><p><b>02</b><span>초록 원에 오면 <strong>손 떼서 스윙</strong></span></p><p><b>03</b><span><strong class="red">불꽃 마구</strong>는 옆으로 피하기</span></p></div><div id="personal-records"></div><div id="daily-match"></div><button type="button" class="ranking-open" id="ranking-start">공용 랭킹 보기</button><button type="button" id="intro-replay" class="intro-replay">오프닝 다시 보기</button></div><div class="panel-cta"><button class="primary" id="start" disabled>구장 준비 중…</button><p id="loadnote" class="keyboard">PC: 방향키 / WASD 이동 · <kbd>SPACE</kbd> 스윙</p></div>`;
+ panel.innerHTML=`<div class="panel-body"><div class="menu-art" role="img" aria-label="희동이 보스 클로즈업"></div><span class="eyebrow">BEAT HEEDONG</span><h1>희동이를 이겨라</h1><button type="button" id="title-chip" class="title-chip" aria-label="칭호 없음 · 도감 열기"><span class="title-chip-text">칭호 없음 · 탭해서 고르기</span><span class="title-chip-chevron" aria-hidden="true">›</span></button><p class="sub">“내 공, 하나라도 제대로 쳐봐.”</p><div class="rules"><p><b>01</b><span>드래그해서 <strong>공 앞에 자리 잡기</strong></span></p><p><b>02</b><span>초록 원에 오면 <strong>손 떼서 스윙</strong></span></p><p><b>03</b><span><strong class="red">불꽃 마구</strong>는 옆으로 피하기</span></p></div><div id="personal-records"></div><div id="daily-match"></div><button type="button" class="ranking-open" id="ranking-start">공용 랭킹 보기</button><button type="button" id="intro-replay" class="intro-replay">오프닝 다시 보기</button><button type="button" class="gesture-opts-open" id="gesture-opts-start">제스처 옵션</button></div><div class="panel-cta"><button class="primary" id="start" disabled>구장 준비 중…</button><p id="loadnote" class="keyboard">PC: 방향키 / WASD 이동 · <kbd>SPACE</kbd> 스윙</p></div>`;
  $('#overlay').classList.remove('hidden');
  $('#personal-records').innerHTML=recordsHtml();
  DailyMatch.renderCard();
@@ -298,6 +354,8 @@ function showStartMenu(){
  if(assetsReady){startBtn.disabled=false;startBtn.innerHTML='플레이 볼 <span>→</span>'}
  else{startBtn.disabled=true;startBtn.textContent='구장 준비 중…'}
  $('#intro-replay').onclick=()=>playCinematic(true);
+ const gstart=$('#gesture-opts-start');
+ if(gstart)gstart.onclick=()=>openGestureOptions('start');
  const rank=$('#ranking-start');
  if(rank)rank.onclick=SharedRanking.open;
 }
@@ -326,7 +384,7 @@ function clearOverlayPanelMode(){
  const overlay=$('#overlay');
  const panel=$('#overlay .panel');
  overlay.classList.remove('inning-stop-overlay');
- panel.classList.remove('start-panel','inning-stop');
+ panel.classList.remove('start-panel','inning-stop','gesture-opts');
  panel.onclick=null;
 }
 function showInningStopModal(){
@@ -384,8 +442,46 @@ function end(){
  if(game.state==='won'){spawnFriendCheer(240,190,{power:.7});showInningStopModal();return}
  showDefeatResult();
 }
-function pause(){if(!$('#cinematic').classList.contains('hidden'))return;if(game.state==='playing'){game.state='paused';clearInput();GameMusic.stop();clearOverlayPanelMode();$('#overlay').classList.remove('hidden');$('#overlay .panel').innerHTML='<div class="panel-body"><span class="eyebrow">TIME OUT</span><h1>잠깐 타임!</h1><p class="detail">다음 공도 받아칠 준비 됐나요?</p></div><div class="panel-cta"><button class="primary" id="resume">승부 계속하기 <span>→</span></button><button type="button" class="secondary" id="to-menu">시작 화면</button></div>';$('#resume').onclick=()=>{game.state='playing';document.activeElement?.blur();previous=performance.now();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();$('#overlay').classList.add('hidden')};$('#to-menu').onclick=()=>{DailyMatch.beginNormal();showStartMenu()}}else if(game.state==='paused'){const r=$('#resume');if(r)r.click()}}
-$('#start').onclick=()=>{DailyMatch.beginNormal();start('new')};$('#pause').onclick=pause;$('#cinematic-skip').onclick=finishCinematic;$('#intro-replay').onclick=()=>playCinematic(true);$('#sound').onclick=()=>{muted=!muted;$('#sound').textContent=muted?'×':'♪';$('#sound').setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');$('#sound').setAttribute('aria-pressed',String(!muted));GameMusic.setMuted(muted);if(!muted){activateAudio();GameMusic.activate();if(!$('#cinematic').classList.contains('hidden'))GameMusic.startOpening();else if(game.state==='playing')GameMusic.startPlay()}};
+function gestureOptsHtml(){
+ const hold=holdLockOn(),ftue=ftueGuidePrefOn(),sil=easySilhouetteOn();
+ const row=(id,label,on)=>`<div class="gesture-opt-row"><div class="gesture-opt-label">${label}</div><button type="button" class="gesture-toggle${on?' is-on':''}" id="${id}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"><span class="gesture-toggle-knob" aria-hidden="true"></span><span class="gesture-toggle-text">${on?'ON':'OFF'}</span></button></div>`;
+ return `<div class="panel-body gesture-opts-body"><div class="gesture-opts-head"><span class="gesture-opts-icon" aria-hidden="true">☝</span><div><span class="eyebrow">GESTURE OPT</span><h1 class="gesture-opts-title">제스처 옵션</h1></div><button type="button" class="gesture-opts-close" id="gesture-opts-close" aria-label="닫기">×</button></div><div class="gesture-opt-list">${row('opt-hold-lock','홀드 록 (조준 고정)',hold)}${row('opt-ftue-guide','FTUE 손 가이드',ftue)}${row('opt-easy-sil','쉬운 구 실루엣',sil)}</div><p class="gesture-opts-hint">홀드 록 ON: 누르는 동안 민트 수직 조준선 · 손 떼면 스윙</p></div><div class="panel-cta"><button type="button" class="primary" id="gesture-opts-done">확인 <span>→</span></button></div>`;
+}
+function bindGestureOptToggles(){
+ const hold=$('#opt-hold-lock'),ftue=$('#opt-ftue-guide'),sil=$('#opt-easy-sil');
+ const sync=(btn,on)=>{btn.classList.toggle('is-on',on);btn.setAttribute('aria-checked',on?'true':'false');const t=btn.querySelector('.gesture-toggle-text');if(t)t.textContent=on?'ON':'OFF'};
+ if(hold)hold.onclick=()=>{const n=!holdLockOn();setOptFlag(OPT_HOLD_LOCK,n);sync(hold,n)};
+ if(ftue)ftue.onclick=()=>{const n=!ftueGuidePrefOn();setFtueGuidePref(n);sync(ftue,n)};
+ if(sil)sil.onclick=()=>{const n=!easySilhouetteOn();setOptFlag(OPT_EASY_SIL,n);sync(sil,n)};
+}
+function closeGestureOptions(){
+ const ret=gestureOptsReturn;gestureOptsReturn=null;
+ if(ret==='pause'&&(game.state==='paused'||game.state==='playing')){game.state='paused';showPauseMenu();return}
+ showStartMenu();
+}
+function openGestureOptions(from){
+ gestureOptsReturn=from||'start';
+ if(from==='pause'&&game.state==='playing'){game.state='paused';clearInput();GameMusic.stop()}
+ clearOverlayPanelMode();
+ const panel=$('#overlay .panel');
+ panel.classList.add('gesture-opts');
+ panel.innerHTML=gestureOptsHtml();
+ $('#overlay').classList.remove('hidden');
+ bindGestureOptToggles();
+ const done=()=>closeGestureOptions();
+ $('#gesture-opts-done').onclick=done;
+ $('#gesture-opts-close').onclick=done;
+}
+function showPauseMenu(){
+ clearOverlayPanelMode();
+ $('#overlay').classList.remove('hidden');
+ $('#overlay .panel').innerHTML='<div class="panel-body"><span class="eyebrow">TIME OUT</span><h1>잠깐 타임!</h1><p class="detail">다음 공도 받아칠 준비 됐나요?</p></div><div class="panel-cta"><button class="primary" id="resume">승부 계속하기 <span>→</span></button><button type="button" class="secondary" id="gesture-opts">제스처 옵션</button><button type="button" class="secondary" id="to-menu">시작 화면</button></div>';
+ $('#resume').onclick=()=>{game.state='playing';document.activeElement?.blur();previous=performance.now();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();$('#overlay').classList.add('hidden')};
+ $('#gesture-opts').onclick=()=>openGestureOptions('pause');
+ $('#to-menu').onclick=()=>{DailyMatch.beginNormal();showStartMenu()};
+}
+function pause(){if(!$('#cinematic').classList.contains('hidden'))return;if($('#overlay .panel')?.classList.contains('gesture-opts')){closeGestureOptions();return}if(game.state==='playing'){game.state='paused';clearInput();GameMusic.stop();showPauseMenu()}else if(game.state==='paused'){const r=$('#resume');if(r)r.click()}}
+$('#start').onclick=()=>{DailyMatch.beginNormal();start('new')};$('#pause').onclick=pause;$('#cinematic-skip').onclick=finishCinematic;$('#intro-replay').onclick=()=>playCinematic(true);const _gos=$('#gesture-opts-start');if(_gos)_gos.onclick=()=>openGestureOptions('start');$('#sound').onclick=()=>{muted=!muted;$('#sound').textContent=muted?'×':'♪';$('#sound').setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');$('#sound').setAttribute('aria-pressed',String(!muted));GameMusic.setMuted(muted);if(!muted){activateAudio();GameMusic.activate();if(!$('#cinematic').classList.contains('hidden'))GameMusic.startOpening();else if(game.state==='playing')GameMusic.startPlay()}};
 canvas.addEventListener('pointerdown',e=>{if(game.state!=='playing'||pointer)return;e.preventDefault();activateAudio();canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,x:e.clientX,y:e.clientY};aim={x:0,y:0}});canvas.addEventListener('pointermove',e=>{if(!pointer||e.pointerId!==pointer.id)return;const sx=W/canvas.clientWidth,sy=H/canvas.clientHeight;aim={x:(e.clientX-pointer.x)*sx,y:(e.clientY-pointer.y)*sy};const l=Math.hypot(aim.x,aim.y);if(l>48){pointer.x=e.clientX-aim.x/l*48/sx;pointer.y=e.clientY-aim.y/l*48/sy}});canvas.addEventListener('pointerup',e=>{if(!pointer||e.pointerId!==pointer.id)return;clearInput();game.swing();processEvents()});function cancel(e){if(pointer?.id===e.pointerId)clearInput()}canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);
 addEventListener('keydown',e=>{if(!$('#cinematic').classList.contains('hidden')||e.target?.closest?.('input,textarea,dialog,button'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys[e.key.toLowerCase()]=true;if(e.code==='Space'&&!e.repeat){if(tryDefeatRetry('space'))return;activateAudio();game.swing();processEvents()}if(e.key==='Escape'&&!e.repeat)pause()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{if(game.state==='playing')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&game.state==='playing')pause()});
 function processEvents(){for(const e of game.events.splice(0)){sound(e.type,e);if(e.type==='perfect'){dismissFtue();perfectStreak++;records.update(game.stage,game.perfects);say('PERFECT!','#fff2a5');const n=perfectStreak>=4?48:perfectStreak>=2?38:28;burst(e.x,e.y,'#FFD25B',n);burst(e.x,e.y,'#FFE09A',Math.floor(n/2));burst(e.x,e.y,'#FFF2A5',Math.floor(n/3));if(perfectStreak>=4)burst(e.x,e.y,'#C3A4FF',8);spawnFriendCheer(e.x??game.zone.x,e.y??game.zone.y,{power:1});freeze=.045;shake=.12}else if(e.type==='hit'){dismissFtue();perfectStreak=0;say('NICE HIT','#b5f3d2');burst(e.x,e.y,'#b5f3d2',12)}else if(e.type==='whiff'){perfectStreak=0;say('헛스윙','#b8cccc',.45)}else if(e.type==='lastStand'){say('끝까지 버티기! · 체력 1','#a7ffe3',1.3);burst(game.player.x,game.player.y,'#a7ffe3',24)}else if(e.type==='damage'){perfectStreak=0;say('피격!','#ff9a84');flash=.18;shake=.16;burst(e.x,e.y,'#ff997d');}else if(e.type==='windup'){$('#pitchcall').innerHTML='<span>'+({double:'연속 직구 · 두 번 받아치세요',changeFast:'체인지업 → 직구 · 기다렸다 두 번!',slider:'슬라이더 · 휘는 공을 따라가세요'}[e.pattern]||(e.pitch==='fire'?'⚠ 불꽃 마구 · 회피':e.pitch==='slow'?'체인지업 · 기다리세요':'직구 · 받아치세요'))+'</span>';$('#pitchcall').style.color=e.pitch==='fire'?'#FFC9A8':e.pitch==='slow'?'#a5e7ff':'#f4eacb';callTime=4;if(e.pitch==='fire'&&!fireCoachShown){fireCoachShown=true;say('불꽃 마구! · 치지 말고 옆으로!','#FF7A45',2.2)}}else if(e.type==='pitch'){pitchPoseTime=.55;if(ftueActive){ftuePitchCount++;if(ftuePitchCount>=4)dismissFtue()}}else if(e.type==='twin'){say('희원이의 도움!','#d9b5ff',1.1);burst(240,250,'#d59cff',22)}else if(e.type==='impact'){bossImpact=.2;burst(240,280,e.perfect?'#ffdb82':'#c3efd3',18)}else if(e.type==='rally'){say('RALLY x'+e.count+' · 홈런 찬스!','#ffe38c',1.1);burst(240,280,'#ffb84d',32);spawnFriendCheer(240,300,{power:.42});freeze=.06;shake=.24}else if(e.type==='reaction'){say(pickHeedongTaunt(e.line),'#d3e8ff',1.15)}else if(e.type==='fury')say('승부는 지금부터!','#ffd18b',1.2);else if(e.type==='end')end()}hud()}
@@ -663,7 +759,7 @@ function draw(){
  }
  for(const e of effects){ctx.globalAlpha=Math.min(1,e.t*3);ctx.fillStyle=e.color;ctx.fillRect(e.x,e.y,3,3)}ctx.globalAlpha=1;drawCheers();
  if(pointer){const r=canvas.getBoundingClientRect(),x=(pointer.x-r.left)/r.width*W,y=(pointer.y-r.top)/r.height*H;ctx.strokeStyle='#d0f2dd44';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,25,0,7);ctx.stroke();const l=Math.hypot(aim.x,aim.y)||1;ctx.fillStyle='#deefd766';ctx.beginPath();ctx.arc(x+aim.x/l*Math.min(18,l),y+aim.y/l*Math.min(18,l),8,0,7);ctx.fill()}
- drawFtueGuide();ctx.restore();if(flash>0){ctx.fillStyle='#ff765329';ctx.fillRect(0,0,W,H)}
+ drawHoldLockAim();drawFtueGuide();ctx.restore();if(flash>0){ctx.fillStyle='#ff765329';ctx.fillRect(0,0,W,H)}
 }
 function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(ftueFade>0)ftueFade=Math.max(0,ftueFade-dt);if(game.state==='playing'){if(ftueActive){ftuePlayTime+=dt;if(ftuePlayTime>=30)dismissFtue()}let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';if(phaseBannerTime>0){phaseBannerTime-=dt;if(phaseBannerTime<=0)hidePhaseBanner()}callTime-=dt;if(callTime<=0)$('#pitchcall').textContent='';pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0)}if(cheers.length)updateCheers(dt);draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'read_baseball_game',description:'Read the current baseball parry match state.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({state:game.state,health:game.hp,bossHealth:game.boss,perfects:game.perfects,combo:game.combo,seconds:Math.floor(game.time)})})).catch(()=>{})}catch{}}
