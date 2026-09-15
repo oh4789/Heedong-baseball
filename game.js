@@ -1,6 +1,8 @@
 'use strict';
 const $=s=>document.querySelector(s),canvas=$('#field'),ctx=canvas.getContext('2d'),game=new BaseballGame(),bg=new Image(),pitcher=new Image(),batter=new Image();const pitchPoses={idle:new Image(),windup:new Image(),arm_swing:new Image(),release:new Image(),follow:new Image()};let pitchPosesReady=false;const batterPoses={ready:new Image(),load:new Image(),swing:new Image(),contact:new Image(),follow:new Image()};let batterPosesReady=0;const W=480,H=850;let previous=0,visualTime=0,pointer=null,aim={x:0,y:0},keys={},effects=[],freeze=0,shake=0,feedbackTime=0,callTime=0,flash=0,muted=false,audio=null,pitchPoseTime=0,bossImpact=0,assetsReady=false;
 let fireCoachShown=false;let perfectStreak=0;let defeatRetryAt=0;
+const FTUE_KEY='beat-heedong.ftue-hitzone-v1';
+let ftueActive=false,ftueFade=0,ftuePlayTime=0,ftuePitchCount=0;
 // Heedong taunt pool for damage/whiff reactions (engine emits fixed lines; diversify here)
 const HEEDONG_TAUNTS=['벌써 휘둘렀어?','이번 공은 내 거야.','너무 서두르네~','내 마구는 어때?','아직 멀었어!','그게 최선이야?','눈에 불을 켜봐!'];
 function pickHeedongTaunt(fallback){
@@ -37,7 +39,106 @@ function playCinematic(force=false){let seen=false;try{seen=localStorage.getItem
 $('#cinematic-next').onclick=()=>{if(openingVideo.paused){openingVideo.play().catch(()=>{});GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startOpening();$('#cinematic-next').textContent='일시정지 Ⅱ'}else{openingVideo.pause();GameMusic.stop();$('#cinematic-next').textContent='계속 재생 ▶'}};
 openingVideo.addEventListener('timeupdate',updateOpeningCaption);openingVideo.addEventListener('ended',finishCinematic);openingVideo.addEventListener('error',finishCinematic);
 $('#cinematic').addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();finishCinematic()}if(e.key==='Tab'){const first=$('#cinematic-skip'),last=$('#cinematic-next');if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
-function start(mode='new'){if(!assetsReady)return;document.activeElement?.blur();activateAudio();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();clearInput();matchRecordStart={...records.data};if(mode!=='continue')fireCoachShown=false;perfectStreak=0;if(mode==='continue')game.continueRun();else game.newRun();records.update(game.stage,game.perfects);effects=[];freeze=shake=flash=pitchPoseTime=bossImpact=0;$('#overlay').classList.add('hidden');say('공이 원에 오면 손을 떼세요','#e1f7d3',2.8);$('#pitchcall').textContent='';previous=performance.now();hud()}
+
+function ftueSeen(){try{return localStorage.getItem(FTUE_KEY)==='1'}catch{return false}}
+function enableFtueIfNeeded(mode){
+ ftueActive=false;ftueFade=0;ftuePlayTime=0;ftuePitchCount=0;
+ if(mode==='continue')return;
+ if(!ftueSeen())ftueActive=true;
+}
+function dismissFtue(){
+ if(!ftueActive)return;
+ ftueActive=false;ftueFade=.4;
+ try{localStorage.setItem(FTUE_KEY,'1')}catch{}
+}
+function drawFtueHand(x,y,ghost){
+ // Cream finger/hand silhouette (or dotted ghost for drag start)
+ ctx.save();ctx.translate(x,y);ctx.rotate(-.35);
+ if(ghost){
+  ctx.strokeStyle='#F7F3E899';ctx.setLineDash([3,4]);ctx.lineWidth=2;ctx.fillStyle='#F7F3E822';
+ }else{
+  ctx.fillStyle='#F7F3E8';ctx.strokeStyle='#F7F3E8';ctx.lineWidth=0;ctx.setLineDash([]);
+ }
+ // palm
+ ctx.beginPath();ctx.ellipse(0,18,16,20,0,0,7);ghost?ctx.stroke():ctx.fill();
+ // index finger toward zone center
+ ctx.beginPath();ctx.ellipse(-2,-18,7,22,0,0,7);ghost?ctx.stroke():ctx.fill();
+ // thumb
+ ctx.beginPath();ctx.ellipse(-16,6,7,12,-.6,0,7);ghost?ctx.stroke():ctx.fill();
+ // knuckle bumps
+ if(!ghost){
+  ctx.fillStyle='#EDE6D4';
+  for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(8+i*1.5,4+i*7,4.5,5.5,0,0,7);ctx.fill()}
+ }
+ ctx.setLineDash([]);ctx.restore();
+}
+function drawFtueGuide(){
+ if(!ftueActive&&ftueFade<=0)return;
+ const a=ftueActive?1:Math.max(0,ftueFade/.4);
+ const z=game.zone;
+ ctx.save();ctx.globalAlpha=a;
+ // Soft dim over playfield — does not block input (canvas draw only)
+ ctx.fillStyle='#081329aa';ctx.fillRect(0,0,W,H);
+ const pulse=1+Math.sin(visualTime*5)*.07;
+ const R=64*pulse; // ~120–140px diameter
+ // Mint outer pulse ring
+ ctx.shadowColor='#9BFFE6';ctx.shadowBlur=18+Math.sin(visualTime*4)*6;
+ ctx.strokeStyle='#9BFFE6';ctx.lineWidth=5.5;ctx.globalAlpha=a*(.75+Math.sin(visualTime*4)*.2);
+ ctx.beginPath();ctx.arc(z.x,z.y,R,0,7);ctx.stroke();
+ // Soft mint fill
+ ctx.shadowBlur=0;ctx.fillStyle='#9BFFE618';ctx.globalAlpha=a*.9;
+ ctx.beginPath();ctx.arc(z.x,z.y,R*.92,0,7);ctx.fill();
+ // Dashed inner ring
+ ctx.strokeStyle='#9BFFE6';ctx.lineWidth=2;ctx.setLineDash([5,6]);ctx.globalAlpha=a*.85;
+ ctx.beginPath();ctx.arc(z.x,z.y,R*.55,0,7);ctx.stroke();ctx.setLineDash([]);
+ // Mint trail arc under hand (drag→release cue)
+ const drag=Math.sin(visualTime*2.2)*.5+.5; // 0..1 loop
+ const hx0=z.x-52, hx1=z.x+8, hy=z.y+38;
+ ctx.strokeStyle='#9BFFE6';ctx.shadowColor='#9BFFE6';ctx.shadowBlur=10;ctx.lineWidth=4;ctx.lineCap='round';
+ ctx.globalAlpha=a*(.45+.4*drag);
+ ctx.beginPath();ctx.moveTo(hx0,hy+6);ctx.quadraticCurveTo((hx0+hx1)/2,hy+28,hx1,hy);ctx.stroke();
+ ctx.shadowBlur=0;
+ // Ghost hand (drag start) + solid hand (current)
+ drawFtueHand(hx0+drag*18,hy-8,true);
+ ctx.globalAlpha=a;
+ drawFtueHand(hx0+28+drag*36,hy-10,false);
+ // Curved mint release arrow
+ ctx.strokeStyle='#9BFFE6';ctx.fillStyle='#9BFFE6';ctx.lineWidth=3;ctx.lineCap='round';
+ ctx.globalAlpha=a*(.55+drag*.4);
+ const ax=z.x+36,ay=z.y-8;
+ ctx.beginPath();ctx.moveTo(ax-10,ay+18);ctx.quadraticCurveTo(ax+22,ay+10,ax+8,ay-16);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(ax+8,ay-16);ctx.lineTo(ax-2,ay-6);ctx.lineTo(ax+16,ay-4);ctx.closePath();ctx.fill();
+ // Caption near hand
+ ctx.globalAlpha=a;ctx.fillStyle='#F7F3E8';ctx.font='bold 13px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillText('떼면 스윙',z.x+8,z.y+72);
+ // Main label above ring
+ ctx.font='bold 16px system-ui';
+ const label='여기서 스윙';
+ ctx.fillStyle='#F7F3E8';ctx.fillText(label,z.x,z.y-R-22);
+ // Mint triangles ▶ ◀
+ ctx.fillStyle='#9BFFE6';
+ const tw=ctx.measureText(label).width/2+14;
+ ctx.beginPath();ctx.moveTo(z.x-tw-10,z.y-R-22);ctx.lineTo(z.x-tw,z.y-R-27);ctx.lineTo(z.x-tw,z.y-R-17);ctx.closePath();ctx.fill();
+ ctx.beginPath();ctx.moveTo(z.x+tw+10,z.y-R-22);ctx.lineTo(z.x+tw,z.y-R-27);ctx.lineTo(z.x+tw,z.y-R-17);ctx.closePath();ctx.fill();
+ // Side hint chips: 드래그로 위치 · 손 떼면 스윙
+ function chip(cx,cy,text){
+  ctx.fillStyle='#081329cc';ctx.strokeStyle='#9BFFE655';ctx.lineWidth=1.5;
+  const w=Math.max(86,text.length*11+28),h=28;
+  ctx.beginPath();
+  const r=10,x0=cx-w/2,y0=cy-h/2;
+  ctx.moveTo(x0+r,y0);ctx.arcTo(x0+w,y0,x0+w,y0+h,r);ctx.arcTo(x0+w,y0+h,x0,y0+h,r);ctx.arcTo(x0,y0+h,x0,y0,r);ctx.arcTo(x0,y0,x0+w,y0,r);ctx.closePath();
+  ctx.fill();ctx.stroke();
+  ctx.fillStyle='#9BFFE6';ctx.beginPath();ctx.arc(x0+14,cy,6,0,7);ctx.fill();
+  ctx.fillStyle='#F7F3E8';ctx.font='bold 11px system-ui';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText(text,x0+24,cy);
+ }
+ const chipY=Math.min(H-36,z.y+110);
+ chip(Math.max(70,z.x-130),chipY,'드래그로 위치');
+ chip(Math.min(W-70,z.x+130),chipY,'손 떼면 스윙');
+ ctx.textBaseline='alphabetic';ctx.restore();
+}
+
+function start(mode='new'){if(!assetsReady)return;document.activeElement?.blur();activateAudio();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();clearInput();matchRecordStart={...records.data};if(mode!=='continue')fireCoachShown=false;perfectStreak=0;enableFtueIfNeeded(mode);if(mode==='continue')game.continueRun();else game.newRun();records.update(game.stage,game.perfects);effects=[];freeze=shake=flash=pitchPoseTime=bossImpact=0;$('#overlay').classList.add('hidden');say('공이 원에 오면 손을 떼세요','#e1f7d3',2.8);$('#pitchcall').textContent='';previous=performance.now();hud()}
 function say(t,c='#ffdda0',duration=.85){$('#feedback').textContent=t;$('#feedback').style.color=c;$('#feedback').style.fontSize=t.length>14?'18px':'30px';feedbackTime=duration}
 function burst(x,y,color,n=15){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=45+Math.random()*180;effects.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:.3+Math.random()*.3,color})}}
 function hud(){$('#bossbar').style.width=Math.max(0,game.boss/game.bossMax*100)+'%';$('#bossvalue').textContent=game.boss+' / '+game.bossMax;$('#stage').textContent='STAGE '+game.stage+' · '+(game.stage===1?'NORMAL':game.stage===2?'HARD':'FEVER');$('#hearts').textContent='♥ '.repeat(game.hp)+'♡ '.repeat(3-game.hp);$('#hearts').setAttribute('aria-label','체력 '+game.hp);$('#clock').textContent=Math.floor(game.time/60)+':'+String(Math.floor(game.time%60)).padStart(2,'0');$('#combo').innerHTML='<b>'+game.combo+'</b> COMBO';$('#pitchcount').textContent=game.pitchCount?game.pitchCount+'번째 투구':'첫 번째 승부';$('#hits').textContent='PERFECT '+game.perfects;$('#ready').textContent=game.cooldown>0?'배트 회수 중':'스윙 준비';$('#cool').style.width=(1-game.cooldown/(game.getSwingCooldown?game.getSwingCooldown():.38))*100+'%'}
@@ -89,7 +190,7 @@ function pause(){if(!$('#cinematic').classList.contains('hidden'))return;if(game
 $('#start').onclick=()=>{DailyMatch.beginNormal();start('new')};$('#pause').onclick=pause;$('#cinematic-skip').onclick=finishCinematic;$('#intro-replay').onclick=()=>playCinematic(true);$('#sound').onclick=()=>{muted=!muted;$('#sound').textContent=muted?'×':'♪';$('#sound').setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');$('#sound').setAttribute('aria-pressed',String(!muted));GameMusic.setMuted(muted);if(!muted){activateAudio();GameMusic.activate();if(!$('#cinematic').classList.contains('hidden'))GameMusic.startOpening();else if(game.state==='playing')GameMusic.startPlay()}};
 canvas.addEventListener('pointerdown',e=>{if(game.state!=='playing'||pointer)return;e.preventDefault();activateAudio();canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,x:e.clientX,y:e.clientY};aim={x:0,y:0}});canvas.addEventListener('pointermove',e=>{if(!pointer||e.pointerId!==pointer.id)return;const sx=W/canvas.clientWidth,sy=H/canvas.clientHeight;aim={x:(e.clientX-pointer.x)*sx,y:(e.clientY-pointer.y)*sy};const l=Math.hypot(aim.x,aim.y);if(l>48){pointer.x=e.clientX-aim.x/l*48/sx;pointer.y=e.clientY-aim.y/l*48/sy}});canvas.addEventListener('pointerup',e=>{if(!pointer||e.pointerId!==pointer.id)return;clearInput();game.swing();processEvents()});function cancel(e){if(pointer?.id===e.pointerId)clearInput()}canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);
 addEventListener('keydown',e=>{if(!$('#cinematic').classList.contains('hidden')||e.target?.closest?.('input,textarea,dialog,button'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys[e.key.toLowerCase()]=true;if(e.code==='Space'&&!e.repeat){if(tryDefeatRetry('space'))return;activateAudio();game.swing();processEvents()}if(e.key==='Escape'&&!e.repeat)pause()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{if(game.state==='playing')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&game.state==='playing')pause()});
-function processEvents(){for(const e of game.events.splice(0)){sound(e.type);if(e.type==='perfect'){perfectStreak++;records.update(game.stage,game.perfects);say('PERFECT!','#fff2a5');const n=perfectStreak>=4?48:perfectStreak>=2?38:28;burst(e.x,e.y,'#FFD25B',n);burst(e.x,e.y,'#FFE09A',Math.floor(n/2));burst(e.x,e.y,'#FFF2A5',Math.floor(n/3));if(perfectStreak>=4)burst(e.x,e.y,'#C3A4FF',8);freeze=.045;shake=.12}else if(e.type==='hit'){perfectStreak=0;say('NICE HIT','#b5f3d2');burst(e.x,e.y,'#b5f3d2',12)}else if(e.type==='whiff'){perfectStreak=0;say('헛스윙','#b8cccc',.45)}else if(e.type==='lastStand'){say('끝까지 버티기! · 체력 1','#a7ffe3',1.3);burst(game.player.x,game.player.y,'#a7ffe3',24)}else if(e.type==='damage'){perfectStreak=0;say('피격!','#ff9a84');flash=.18;shake=.16;burst(e.x,e.y,'#ff997d');}else if(e.type==='windup'){$('#pitchcall').innerHTML='<span>'+({double:'연속 직구 · 두 번 받아치세요',changeFast:'체인지업 → 직구 · 기다렸다 두 번!',slider:'슬라이더 · 휘는 공을 따라가세요'}[e.pattern]||(e.pitch==='fire'?'⚠ 불꽃 마구 · 회피':e.pitch==='slow'?'체인지업 · 기다리세요':'직구 · 받아치세요'))+'</span>';$('#pitchcall').style.color=e.pitch==='fire'?'#FFC9A8':e.pitch==='slow'?'#a5e7ff':'#f4eacb';callTime=4;if(e.pitch==='fire'&&!fireCoachShown){fireCoachShown=true;say('불꽃 마구! · 치지 말고 옆으로!','#FF7A45',2.2)}}else if(e.type==='pitch'){pitchPoseTime=.55}else if(e.type==='twin'){say('희원이의 도움!','#d9b5ff',1.1);burst(240,250,'#d59cff',22)}else if(e.type==='impact'){bossImpact=.2;burst(240,280,e.perfect?'#ffdb82':'#c3efd3',18)}else if(e.type==='rally'){say('RALLY x'+e.count+' · 홈런 찬스!','#ffe38c',1.1);burst(240,280,'#ffb84d',32);freeze=.06;shake=.24}else if(e.type==='reaction'){say(pickHeedongTaunt(e.line),'#d3e8ff',1.15)}else if(e.type==='fury')say('승부는 지금부터!','#ffd18b',1.2);else if(e.type==='end')end()}hud()}
+function processEvents(){for(const e of game.events.splice(0)){sound(e.type);if(e.type==='perfect'){dismissFtue();perfectStreak++;records.update(game.stage,game.perfects);say('PERFECT!','#fff2a5');const n=perfectStreak>=4?48:perfectStreak>=2?38:28;burst(e.x,e.y,'#FFD25B',n);burst(e.x,e.y,'#FFE09A',Math.floor(n/2));burst(e.x,e.y,'#FFF2A5',Math.floor(n/3));if(perfectStreak>=4)burst(e.x,e.y,'#C3A4FF',8);freeze=.045;shake=.12}else if(e.type==='hit'){dismissFtue();perfectStreak=0;say('NICE HIT','#b5f3d2');burst(e.x,e.y,'#b5f3d2',12)}else if(e.type==='whiff'){perfectStreak=0;say('헛스윙','#b8cccc',.45)}else if(e.type==='lastStand'){say('끝까지 버티기! · 체력 1','#a7ffe3',1.3);burst(game.player.x,game.player.y,'#a7ffe3',24)}else if(e.type==='damage'){perfectStreak=0;say('피격!','#ff9a84');flash=.18;shake=.16;burst(e.x,e.y,'#ff997d');}else if(e.type==='windup'){$('#pitchcall').innerHTML='<span>'+({double:'연속 직구 · 두 번 받아치세요',changeFast:'체인지업 → 직구 · 기다렸다 두 번!',slider:'슬라이더 · 휘는 공을 따라가세요'}[e.pattern]||(e.pitch==='fire'?'⚠ 불꽃 마구 · 회피':e.pitch==='slow'?'체인지업 · 기다리세요':'직구 · 받아치세요'))+'</span>';$('#pitchcall').style.color=e.pitch==='fire'?'#FFC9A8':e.pitch==='slow'?'#a5e7ff':'#f4eacb';callTime=4;if(e.pitch==='fire'&&!fireCoachShown){fireCoachShown=true;say('불꽃 마구! · 치지 말고 옆으로!','#FF7A45',2.2)}}else if(e.type==='pitch'){pitchPoseTime=.55;if(ftueActive){ftuePitchCount++;if(ftuePitchCount>=4)dismissFtue()}}else if(e.type==='twin'){say('희원이의 도움!','#d9b5ff',1.1);burst(240,250,'#d59cff',22)}else if(e.type==='impact'){bossImpact=.2;burst(240,280,e.perfect?'#ffdb82':'#c3efd3',18)}else if(e.type==='rally'){say('RALLY x'+e.count+' · 홈런 찬스!','#ffe38c',1.1);burst(240,280,'#ffb84d',32);freeze=.06;shake=.24}else if(e.type==='reaction'){say(pickHeedongTaunt(e.line),'#d3e8ff',1.15)}else if(e.type==='fury')say('승부는 지금부터!','#ffd18b',1.2);else if(e.type==='end')end()}hud()}
 function ball(x,y,r,color,fire=false){ctx.save();ctx.translate(x,y);if(fire){ctx.fillStyle='#f8773766';ctx.beginPath();ctx.moveTo(-r,0);ctx.lineTo(-r*.6,-r*3.2);ctx.lineTo(0,-r*1.6);ctx.lineTo(r*.6,-r*3.8);ctx.lineTo(r,0);ctx.fill()}ctx.shadowColor=color;ctx.shadowBlur=fire?15:7;ctx.fillStyle=color;ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle=fire?'#6d260d':'#ba5a51';ctx.lineWidth=1.7;ctx.beginPath();ctx.arc(-r*.8,0,r*.7,-1.1,1.1);ctx.stroke();ctx.beginPath();ctx.arc(r*.8,0,r*.7,2.05,4.25);ctx.stroke();ctx.restore()}
 function currentPitchPose(){
  if(game.windup){
@@ -280,9 +381,9 @@ function draw(){
  }
  for(const e of effects){ctx.globalAlpha=Math.min(1,e.t*3);ctx.fillStyle=e.color;ctx.fillRect(e.x,e.y,3,3)}ctx.globalAlpha=1;
  if(pointer){const r=canvas.getBoundingClientRect(),x=(pointer.x-r.left)/r.width*W,y=(pointer.y-r.top)/r.height*H;ctx.strokeStyle='#d0f2dd44';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,25,0,7);ctx.stroke();const l=Math.hypot(aim.x,aim.y)||1;ctx.fillStyle='#deefd766';ctx.beginPath();ctx.arc(x+aim.x/l*Math.min(18,l),y+aim.y/l*Math.min(18,l),8,0,7);ctx.fill()}
- ctx.restore();if(flash>0){ctx.fillStyle='#ff765329';ctx.fillRect(0,0,W,H)}
+ drawFtueGuide();ctx.restore();if(flash>0){ctx.fillStyle='#ff765329';ctx.fillRect(0,0,W,H)}
 }
-function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(game.state==='playing'){let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';callTime-=dt;if(callTime<=0)$('#pitchcall').textContent='';pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0)}draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
+function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(ftueFade>0)ftueFade=Math.max(0,ftueFade-dt);if(game.state==='playing'){if(ftueActive){ftuePlayTime+=dt;if(ftuePlayTime>=30)dismissFtue()}let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';callTime-=dt;if(callTime<=0)$('#pitchcall').textContent='';pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0)}draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'read_baseball_game',description:'Read the current baseball parry match state.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({state:game.state,health:game.hp,bossHealth:game.boss,perfects:game.perfects,combo:game.combo,seconds:Math.floor(game.time)})})).catch(()=>{})}catch{}}
 
 function loadAsset(img,url){return new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error(url));img.src=url})}
