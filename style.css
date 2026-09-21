@@ -442,3 +442,36 @@ html,body{position:fixed;inset:0;width:100%;height:100%;height:100dvh;overflow:h
  background:linear-gradient(100deg,#9BFFE6,#7BE8D4);color:#081329;
 }
 #overlay .panel-cta #gesture-opts{margin-top:8px}
+
+
+/* Play HUD polish v1 (design/refs/play-hud-polish-v1.md) — contrast/spacing only; no XP/coins */
+header{background:linear-gradient(#0B1320f5,#08152ce0 72%,transparent)}
+.boss-label{margin:0 0 8px;gap:8px}
+.boss-label>span:first-child{font-weight:800;color:#F7F3E8;letter-spacing:-.2px}
+.boss-label strong{color:#79aeff;font-style:italic;margin-left:6px;letter-spacing:1px}
+.boss-tag{font-size:11px;font-weight:900;font-style:italic;letter-spacing:1.5px;color:#FF986E;padding:2px 8px;border:1px solid #FF986E66;border-radius:999px;background:#FF986E18;text-shadow:0 0 10px #FF986E44}
+.boss-phase-bar,.bar{height:12px;border-color:#2D3757;background:#040812e8}
+.meta{margin-top:8px;color:#A4B9D1;font-variant-numeric:tabular-nums}
+#bossvalue{opacity:.88;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";letter-spacing:.2px}
+footer{background:linear-gradient(transparent,#0B1320e8 32%,#0B1320fc)}
+.scoreline{display:flex;justify-content:flex-start;align-items:flex-end;margin-bottom:10px;min-height:48px;height:auto}
+.score-cluster{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+#hearts{font-size:28px;letter-spacing:4px;color:#FF986E;text-shadow:0 2px 1px #7d2433,0 0 16px #FF986E55;line-height:1}
+#combo{font-size:13px;font-weight:900;font-style:italic;letter-spacing:-.3px;color:#FFE597;line-height:1;padding-bottom:2px}
+#combo b{font-size:42px;line-height:1;color:#FFE597;margin-right:4px;text-shadow:1px 2px #c36828,0 0 14px #FFE59733;font-variant-numeric:tabular-nums}
+.readiness{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;font-size:13px;color:#bddef2}
+#ready{color:#7DFFC1;font-weight:800;letter-spacing:-.2px;text-shadow:0 0 10px #7DFFC133}
+#hits{font-size:12px;font-weight:800;color:#FFE09A;font-variant-numeric:tabular-nums;padding:3px 9px;border-radius:999px;border:1px solid #FFE09A44;background:#08132999}
+.coolbar{height:8px;border:1px solid #7DFFC144;border-radius:999px;background:#071122;box-shadow:inset 0 0 0 1px #0B132088}
+.coolbar i{background:linear-gradient(90deg,#25b9b0,#7DFFC1);box-shadow:0 0 10px #7DFFC144}
+footer>p{font-size:11px;color:#7191aa;margin:10px 0 0;opacity:.9}
+.controls button{width:44px;height:44px;min-width:44px;min-height:44px}
+@media(max-height:690px){
+ .scoreline{min-height:36px}
+ #combo b{font-size:34px}
+ #hearts{font-size:24px}
+ .score-cluster{gap:10px}
+}
+@media(prefers-reduced-motion:reduce){
+ .coolbar i,.boss-phase-bar .boss-chunk i{transition:none}
+}
