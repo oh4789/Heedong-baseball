@@ -516,16 +516,27 @@ function drawPitcher(){
  const fade=ctx.createLinearGradient(0,400,0,442);fade.addColorStop(0,'#18362900');fade.addColorStop(.45,'#18362988');fade.addColorStop(1,'#18362900');ctx.fillStyle=fade;ctx.fillRect(0,400,480,42);
  if(bossImpact>0){ctx.strokeStyle='#ffe3a1';ctx.globalAlpha=bossImpact*3;ctx.lineWidth=2;ctx.beginPath();ctx.arc(240,290,18+(1-bossImpact/.2)*20,0,7);ctx.stroke();ctx.globalAlpha=1}
  if(game.vulnerable>0){
-  const pulse=.55+.45*Math.sin(visualTime*7);
-  const grd=ctx.createRadialGradient(240,268,12,240,268,78);
-  grd.addColorStop(0,`rgba(255,248,224,${.22*pulse})`);
-  grd.addColorStop(.45,`rgba(255,224,154,${.28*pulse})`);
+  // vulnerable-window-glow-v1: strong white-gold at open → weak gold as it fades (no red)
+  const remain=Math.min(1,game.vulnerable/2);
+  const strong=remain>0.55; // peak after dodge
+  const pulse=.5+.5*Math.sin(visualTime*(strong?10:6));
+  const coreA=(strong?.32:.18)*pulse;
+  const midA=(strong?.34:.22)*pulse;
+  const grd=ctx.createRadialGradient(240,268,10,240,268,strong?92:70);
+  grd.addColorStop(0,`rgba(255,255,255,${strong?coreA*.9:coreA*.35})`);
+  grd.addColorStop(.25,`rgba(255,248,231,${coreA})`); // #FFF8E7
+  grd.addColorStop(.55,`rgba(255,224,154,${midA})`); // #FFE09A
   grd.addColorStop(1,'rgba(255,224,154,0)');
-  ctx.fillStyle=grd;ctx.beginPath();ctx.arc(240,268,78,0,7);ctx.fill();
-  ctx.strokeStyle=`rgba(255,240,200,${.55*pulse})`;ctx.lineWidth=2.2;ctx.shadowColor='#FFE09A';ctx.shadowBlur=14;
-  ctx.beginPath();ctx.arc(240,268,36+pulse*6,0,7);ctx.stroke();
-  ctx.shadowBlur=0;ctx.strokeStyle=`rgba(255,255,255,${.35*pulse})`;ctx.lineWidth=1.2;
-  ctx.beginPath();ctx.arc(240,268,28+pulse*4,0,7);ctx.stroke();
+  ctx.fillStyle=grd;ctx.beginPath();ctx.arc(240,268,strong?92:70,0,7);ctx.fill();
+  // chest rim light
+  ctx.strokeStyle=strong?`rgba(255,255,255,${.5*pulse})`:`rgba(255,224,154,${.45*pulse})`;
+  ctx.lineWidth=strong?2.8:2;ctx.shadowColor=strong?'#FFFFFF':'#FFE09A';ctx.shadowBlur=strong?18:12;
+  ctx.beginPath();ctx.arc(240,268,(strong?40:34)+pulse*6,0,7);ctx.stroke();
+  ctx.shadowBlur=0;
+  if(strong){
+   ctx.strokeStyle=`rgba(255,248,231,${.4*pulse})`;ctx.lineWidth=1.4;
+   ctx.beginPath();ctx.arc(240,268,26+pulse*5,0,7);ctx.stroke();
+  }
  }
 }
 function currentBatterPose(){
