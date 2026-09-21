@@ -1,6 +1,13 @@
 'use strict';
 const $=s=>document.querySelector(s),canvas=$('#field'),ctx=canvas.getContext('2d'),game=new BaseballGame(),bg=new Image(),pitcher=new Image(),batter=new Image();const pitchPoses={idle:new Image(),windup:new Image(),arm_swing:new Image(),release:new Image(),follow:new Image()};let pitchPosesReady=false;const batterPoses={ready:new Image(),load:new Image(),swing:new Image(),contact:new Image(),follow:new Image()};let batterPosesReady=0;const W=480,H=850;let previous=0,visualTime=0,pointer=null,aim={x:0,y:0},keys={},effects=[],cheers=[],freeze=0,shake=0,feedbackTime=0,callTime=0,flash=0,muted=false,audio=null,pitchPoseTime=0,bossImpact=0,assetsReady=false;
 let fireCoachShown=false;let perfectStreak=0;let defeatRetryAt=0;
+let juiceFx=[],nearMissEdge=0;
+const reduceMotion=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}};
+function applyFreeze(sec,shakeAmt=0){
+ if(reduceMotion()){flash=Math.max(flash,1/60);return}
+ if(sec>0)freeze=Math.max(freeze,sec);
+ if(shakeAmt>0)shake=Math.max(shake,shakeAmt);
+}
 let phaseChunkLast=3,phaseBannerTime=0;
 const PHASE_LINES={2:'희동이: 이제 진지하게 간다',3:'희동이: 끝까지 붙어보자'};
 const FTUE_KEY='beat-heedong.ftue-hitzone-v1';
@@ -328,9 +335,107 @@ function updateBossPhaseHud(){
  }
 }
 
-function start(mode='new'){if(!assetsReady)return;document.activeElement?.blur();activateAudio();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();clearInput();matchRecordStart={...records.data};if(mode!=='continue')fireCoachShown=false;perfectStreak=0;enableFtueIfNeeded(mode);if(mode==='continue')game.continueRun();else game.newRun();records.update(game.stage,game.perfects);effects=[];cheers=[];freeze=shake=flash=pitchPoseTime=bossImpact=0;phaseChunkLast=3;hidePhaseBanner();$('#overlay').classList.add('hidden');say('공이 원에 오면 손을 떼세요','#e1f7d3',2.8);$('#pitchcall').textContent='';previous=performance.now();hud()}
+function start(mode='new'){if(!assetsReady)return;document.activeElement?.blur();activateAudio();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();clearInput();matchRecordStart={...records.data};if(mode!=='continue')fireCoachShown=false;perfectStreak=0;enableFtueIfNeeded(mode);if(mode==='continue')game.continueRun();else game.newRun();records.update(game.stage,game.perfects);effects=[];cheers=[];juiceFx=[];nearMissEdge=0;freeze=shake=flash=pitchPoseTime=bossImpact=0;phaseChunkLast=3;hidePhaseBanner();$('#overlay').classList.add('hidden');say('공이 원에 오면 손을 떼세요','#e1f7d3',2.8);$('#pitchcall').textContent='';previous=performance.now();hud()}
 function say(t,c='#ffdda0',duration=.85){$('#feedback').textContent=t;$('#feedback').style.color=c;$('#feedback').style.fontSize=t.length>14?'18px':'30px';feedbackTime=duration}
 function burst(x,y,color,n=15){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=45+Math.random()*180;effects.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:.3+Math.random()*.3,color})}}
+// Director juice helpers (VFX only — judgment/hitboxes untouched)
+function spawnRing(x,y,color,life=.45,r0=8,r1=58){juiceFx.push({kind:'ring',x,y,color,t:life,life,r0,r1})}
+function spawnFloatText(x,y,text,fill,glow,life=.7,vy=-52){juiceFx.push({kind:'floatText',x,y,text,fill,glow,t:life,life,vy})}
+function spawnSmoke(x,y){juiceFx.push({kind:'smoke',x,y,t:.38,life:.38});for(let i=0;i<5;i++){const a=-Math.PI/2+(Math.random()-.5)*1.4,s=20+Math.random()*40;effects.push({x:x+(Math.random()-.5)*10,y:y+(Math.random()-.5)*8,vx:Math.cos(a)*s,vy:Math.sin(a)*s-10,t:.28+Math.random()*.2,color:i%2?'#FF7A6Eaa':'#ff9a8499'})}}
+function spawnSunburst(x,y){juiceFx.push({kind:'sunburst',x,y,t:.42,life:.42,spin:Math.random()*Math.PI})}
+function spawnFireDodgeJuice(x,y){
+ // fire-dodge-juice-v1: 회피! float + coral/gold sparks + mint ring; no heavy hitstop
+ const cx=x??(game.zone?.x??240),cy=y??(game.zone?.y??650);
+ spawnFloatText(cx,cy-18,'회피!','#FFAB88','#FF5A2A',.7);
+ burst(cx,cy,'#FF5A2A',16);burst(cx,cy,'#FFD25B',10);
+ spawnRing(cx,cy+10,'#9BFFE6',.55,10,54);
+}
+function isNearMissWhiff(){
+ // VFX-only proximity — does NOT alter swing() candidates
+ const z=game.zone,reach=game.getWideReach(),nearR=reach*1.15;
+ return game.balls.some(b=>{
+  if(b.resolved||b.t<0||b.type==='fire')return false;
+  const hit=((b.x-z.x)/reach)**2+((b.y-z.y)/48)**2<=1;
+  if(hit)return false;
+  if(((b.x-z.x)/nearR)**2+((b.y-z.y)/48)**2<=1)return true;
+  return Math.abs(b.y-z.y)<56&&Math.abs(b.x-z.x)<nearR*1.25;
+ });
+}
+function spawnNearMissJuice(){
+ // near-miss-flash-v1: coral edge vignette + short 아슬아슬! — no hitstop, no Early/Late chip
+ nearMissEdge=.2;
+ juiceFx.push({kind:'nearText',x:game.zone.x,y:game.zone.y-36,t:.2,life:.2});
+ juiceFx.push({kind:'slash',x:game.zone.x,y:game.zone.y,t:.18,life:.18});
+ burst(game.zone.x,game.zone.y,'#FF7A6E',8);burst(game.zone.x,game.zone.y,'#FFAB88',5);
+}
+function spawnGoodHitJuice(x,y){
+ spawnRing(x,y,'#A8E8FF',.4,6,50);
+ burst(x,y,'#F5E6C8',12);burst(x,y,'#A8E8FF',7);
+}
+function spawnPerfectHitJuice(x,y){
+ spawnSunburst(x,y);
+ burst(x,y,'#C3A4FF',10);
+}
+function updateJuice(dt){
+ for(const j of juiceFx){
+  if(j.kind==='floatText'){j.y+=(j.vy|| -52)*dt;j.vy=(j.vy||-52)*Math.max(0,1-1.2*dt)}
+  j.t-=dt;
+ }
+ juiceFx=juiceFx.filter(j=>j.t>0);
+ if(nearMissEdge>0)nearMissEdge=Math.max(0,nearMissEdge-dt);
+}
+function drawJuice(){
+ for(const j of juiceFx){
+  const p=1-j.t/j.life,fade=Math.min(1,j.t*5)*(1-Math.max(0,p-.7)/.3);
+  if(j.kind==='ring'){
+   const r=j.r0+(j.r1-j.r0)*Math.min(1,p*1.15);
+   ctx.save();ctx.globalAlpha=fade*.9;ctx.strokeStyle=j.color;ctx.lineWidth=2.2*(1-p*.55);ctx.shadowColor=j.color;ctx.shadowBlur=10;
+   ctx.beginPath();ctx.ellipse(j.x,j.y,r,r*.38,0,0,7);ctx.stroke();ctx.shadowBlur=0;ctx.restore();
+  }else if(j.kind==='floatText'){
+   ctx.save();ctx.translate(j.x,j.y);ctx.rotate(-.12);ctx.globalAlpha=fade;
+   ctx.font='italic 900 34px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+   ctx.shadowColor=j.glow;ctx.shadowBlur=18;ctx.fillStyle=j.fill;ctx.fillText(j.text,0,0);
+   ctx.shadowBlur=8;ctx.strokeStyle=j.glow;ctx.lineWidth=1.5;ctx.strokeText(j.text,0,0);
+   ctx.shadowBlur=0;ctx.restore();
+  }else if(j.kind==='nearText'){
+   const shakeX=Math.sin(visualTime*90)*2.2*(1-p);
+   ctx.save();ctx.translate(j.x+shakeX,j.y);ctx.rotate(-.08+shakeX*.01);ctx.globalAlpha=fade;
+   ctx.font='italic 900 28px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+   ctx.shadowColor='#FF5A2A';ctx.shadowBlur=14;ctx.fillStyle='#FFAB88';ctx.fillText('아슬아슬!',0,0);
+   ctx.shadowBlur=0;ctx.restore();
+  }else if(j.kind==='slash'){
+   ctx.save();ctx.globalAlpha=fade*.75;ctx.strokeStyle='#FF7A6E';ctx.lineWidth=3;ctx.lineCap='round';ctx.shadowColor='#FF5A2A';ctx.shadowBlur=12;
+   const len=40+p*50;ctx.beginPath();ctx.moveTo(j.x-len*.7,j.y+len*.35);ctx.lineTo(j.x+len*.55,j.y-len*.4);ctx.stroke();
+   ctx.shadowBlur=0;ctx.restore();
+  }else if(j.kind==='smoke'){
+   ctx.save();ctx.globalAlpha=fade*.55;
+   for(let i=0;i<4;i++){
+    const ang=i*1.7+p,rr=10+i*7+p*16;
+    ctx.fillStyle=i%2?'#FF7A6E66':'#c4b8b055';
+    ctx.beginPath();ctx.ellipse(j.x+Math.cos(ang)*rr*.3,j.y-p*22-i*4,12+i*3,8+i*2,ang*.2,0,7);ctx.fill();
+   }
+   ctx.restore();
+  }else if(j.kind==='sunburst'){
+   ctx.save();ctx.translate(j.x,j.y);ctx.rotate((j.spin||0)+p*.4);ctx.globalAlpha=fade;
+   const rays=14;
+   for(let i=0;i<rays;i++){
+    const a=i/rays*Math.PI*2,len=28+(i%3)*10+p*18,col=i%3===0?'#C3A4FF':'#FFD25B';
+    ctx.strokeStyle=col;ctx.lineWidth=i%3===0?2:2.8;ctx.shadowColor=col;ctx.shadowBlur=10;
+    ctx.beginPath();ctx.moveTo(Math.cos(a)*6,Math.sin(a)*6);ctx.lineTo(Math.cos(a)*len,Math.sin(a)*len);ctx.stroke();
+   }
+   ctx.shadowBlur=16;ctx.fillStyle='#FFE09A';ctx.beginPath();ctx.arc(0,0,8+p*4,0,7);ctx.fill();
+   ctx.shadowBlur=0;ctx.restore();
+  }
+ }
+ ctx.globalAlpha=1;ctx.textBaseline='alphabetic';
+}
+function drawNearMissVignette(){
+ if(nearMissEdge<=0)return;
+ const a=Math.min(1,nearMissEdge/.2)*.62;
+ const g=ctx.createRadialGradient(W/2,H/2,W*.22,W/2,H/2,W*.78);
+ g.addColorStop(0,'rgba(255,90,42,0)');g.addColorStop(.55,'rgba(255,90,42,0)');g.addColorStop(1,`rgba(255,90,42,${a})`);
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+}
 // Local/fake friend cheer FX (design/refs/friend-cheer-fx-v1.md) — canvas particles only, no hitstop.
 const CHEER_CREAM='#F7F3E8',CHEER_MINT='#9BFFE6',CHEER_CORAL='#FF986E',CHEER_GOLD='#FFE09A';
 function spawnFriendCheer(x,y,{power=1}={}){
@@ -562,7 +667,7 @@ function restoreBalls(snaps){for(const s of snaps){s.b.t=s.t;s.b.x=s.x;s.b.y=s.y
 function swingWithTouchLatency(e){const stamp=typeof e?.timeStamp==='number'?e.timeStamp:performance.now();const lagMs=Math.max(0,Math.min(TOUCH_LAG_CAP_MS,performance.now()-stamp));const snaps=rewindBallsForHitTest(lagMs/1000);try{game.swing()}finally{restoreBalls(snaps)}}
 canvas.addEventListener('pointerdown',e=>{if(game.state!=='playing'||pointer)return;e.preventDefault();activateAudio();canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,x:e.clientX,y:e.clientY};aim={x:0,y:0}});canvas.addEventListener('pointermove',e=>{if(!pointer||e.pointerId!==pointer.id)return;const sx=W/canvas.clientWidth,sy=H/canvas.clientHeight;aim={x:(e.clientX-pointer.x)*sx,y:(e.clientY-pointer.y)*sy};const l=Math.hypot(aim.x,aim.y);if(l>48){pointer.x=e.clientX-aim.x/l*48/sx;pointer.y=e.clientY-aim.y/l*48/sy}});canvas.addEventListener('pointerup',e=>{if(!pointer||e.pointerId!==pointer.id)return;const armed=holdLockOn();clearInput();swingWithTouchLatency(e);if(armed&&game.swingAnim>0){ghostBatFade=1;ghostBatSpark=.32}processEvents()});function cancel(e){if(pointer?.id===e.pointerId)clearInput()}canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);
 addEventListener('keydown',e=>{if(!$('#cinematic').classList.contains('hidden')||e.target?.closest?.('input,textarea,dialog,button'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys[e.key.toLowerCase()]=true;if(e.code==='Space'&&!e.repeat){if(tryDefeatRetry('space'))return;activateAudio();game.swing();processEvents()}if(e.key==='Escape'&&!e.repeat)pause()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{if(game.state==='playing')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&game.state==='playing')pause()});
-function processEvents(){for(const e of game.events.splice(0)){sound(e.type,e);if(e.type==='perfect'){dismissFtue();perfectStreak++;records.update(game.stage,game.perfects);say('PERFECT!','#fff2a5');const n=perfectStreak>=4?48:perfectStreak>=2?38:28;burst(e.x,e.y,'#FFD25B',n);burst(e.x,e.y,'#FFE09A',Math.floor(n/2));burst(e.x,e.y,'#FFF2A5',Math.floor(n/3));if(perfectStreak>=4)burst(e.x,e.y,'#C3A4FF',8);spawnFriendCheer(e.x??game.zone.x,e.y??game.zone.y,{power:1});freeze=.06;shake=.15}else if(e.type==='hit'){dismissFtue();perfectStreak=0;say('NICE HIT','#b5f3d2');burst(e.x,e.y,'#b5f3d2',12)}else if(e.type==='whiff'){perfectStreak=0;say('헛스윙','#b8cccc',.45)}else if(e.type==='lastStand'){say('끝까지 버티기! · 체력 1','#a7ffe3',1.3);burst(game.player.x,game.player.y,'#a7ffe3',24)}else if(e.type==='damage'){perfectStreak=0;say('피격!','#ff9a84');flash=.18;shake=.16;burst(e.x,e.y,'#ff997d');}else if(e.type==='windup'){$('#pitchcall').innerHTML='<span>'+({double:'연속 직구 · 두 번 받아치세요',changeFast:'체인지업 → 직구 · 기다렸다 두 번!',slider:'슬라이더 · 휘는 공을 따라가세요'}[e.pattern]||(e.pitch==='fire'?'⚠ 불꽃 마구 · 회피':e.pitch==='slow'?'체인지업 · 기다리세요':'직구 · 받아치세요'))+'</span>';$('#pitchcall').style.color=e.pitch==='fire'?'#FFC9A8':e.pitch==='slow'?'#a5e7ff':'#f4eacb';callTime=4;if(e.pitch==='fire'&&!fireCoachShown){fireCoachShown=true;say('불꽃 마구! · 치지 말고 옆으로!','#FF7A45',2.2)}}else if(e.type==='pitch'){pitchPoseTime=.55;if(ftueActive){ftuePitchCount++;if(ftuePitchCount>=4)dismissFtue()}}else if(e.type==='twin'){say('희원이의 도움!','#d9b5ff',1.1);burst(240,250,'#d59cff',22)}else if(e.type==='impact'){bossImpact=.2;burst(240,280,e.perfect?'#ffdb82':'#c3efd3',18)}else if(e.type==='rally'){say('RALLY x'+e.count+' · 홈런 찬스!','#ffe38c',1.1);burst(240,280,'#ffb84d',32);spawnFriendCheer(240,300,{power:.42});freeze=.06;shake=.24}else if(e.type==='reaction'){say(pickHeedongTaunt(e.line),'#d3e8ff',1.15)}else if(e.type==='vulnerable'){say('약점 노출! · PERFECT ×1.2','#FFE09A',1.1);burst(240,280,'#FFE09A',16);burst(240,290,'#fff8e0',10)}else if(e.type==='fury')say('승부는 지금부터!','#ffd18b',1.2);else if(e.type==='end')end()}hud()}
+function processEvents(){for(const e of game.events.splice(0)){sound(e.type,e);if(e.type==='perfect'){dismissFtue();perfectStreak++;records.update(game.stage,game.perfects);say('PERFECT!','#fff2a5');const n=perfectStreak>=4?48:perfectStreak>=2?38:28;burst(e.x,e.y,'#FFD25B',n);burst(e.x,e.y,'#FFE09A',Math.floor(n/2));burst(e.x,e.y,'#FFF2A5',Math.floor(n/3));if(perfectStreak>=4)burst(e.x,e.y,'#C3A4FF',8);spawnFriendCheer(e.x??game.zone.x,e.y??game.zone.y,{power:1});freeze=.06;shake=.15}else if(e.type==='hit'){dismissFtue();perfectStreak=0;say('NICE HIT','#b5f3d2');burst(e.x,e.y,'#b5f3d2',12)}else if(e.type==='whiff'){perfectStreak=0;say('헛스윙','#b8cccc',.45)}else if(e.type==='lastStand'){say('끝까지 버티기! · 체력 1','#a7ffe3',1.3);burst(game.player.x,game.player.y,'#a7ffe3',24)}else if(e.type==='damage'){perfectStreak=0;say('피격!','#ff9a84');flash=.18;shake=.16;burst(e.x,e.y,'#ff997d');}else if(e.type==='windup'){$('#pitchcall').innerHTML='<span>'+({double:'연속 직구 · 두 번 받아치세요',changeFast:'체인지업 → 직구 · 기다렸다 두 번!',slider:'슬라이더 · 휘는 공을 따라가세요'}[e.pattern]||(e.pitch==='fire'?'⚠ 불꽃 마구 · 회피':e.pitch==='slow'?'체인지업 · 기다리세요':'직구 · 받아치세요'))+'</span>';$('#pitchcall').style.color=e.pitch==='fire'?'#FFC9A8':e.pitch==='slow'?'#a5e7ff':'#f4eacb';callTime=4;if(e.pitch==='fire'&&!fireCoachShown){fireCoachShown=true;say('불꽃 마구! · 치지 말고 옆으로!','#FF7A45',2.2)}}else if(e.type==='pitch'){pitchPoseTime=.55;if(ftueActive){ftuePitchCount++;if(ftuePitchCount>=4)dismissFtue()}}else if(e.type==='twin'){say('희원이의 도움!','#d9b5ff',1.1);burst(240,250,'#d59cff',22)}else if(e.type==='impact'){bossImpact=.2;burst(240,280,e.perfect?'#ffdb82':'#c3efd3',18)}else if(e.type==='rally'){say('RALLY x'+e.count+' · 홈런 찬스!','#ffe38c',1.1);burst(240,280,'#ffb84d',32);spawnFriendCheer(240,300,{power:.42});freeze=.06;shake=.24}else if(e.type==='reaction'){say(pickHeedongTaunt(e.line),'#d3e8ff',1.15)}else if(e.type==='vulnerable'){spawnFireDodgeJuice(game.zone.x,game.zone.y);say('약점 노출! · PERFECT ×1.2','#FFE09A',1.1);burst(240,280,'#FFE09A',16);burst(240,290,'#fff8e0',10)}else if(e.type==='fury')say('승부는 지금부터!','#ffd18b',1.2);else if(e.type==='end')end()}hud()}
 function ball(x,y,r,color,fire=false){ctx.save();ctx.translate(x,y);if(fire){ctx.fillStyle='#f8773766';ctx.beginPath();ctx.moveTo(-r,0);ctx.lineTo(-r*.6,-r*3.2);ctx.lineTo(0,-r*1.6);ctx.lineTo(r*.6,-r*3.8);ctx.lineTo(r,0);ctx.fill()}ctx.shadowColor=color;ctx.shadowBlur=fire?15:7;ctx.fillStyle=color;ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle=fire?'#6d260d':'#ba5a51';ctx.lineWidth=1.7;ctx.beginPath();ctx.arc(-r*.8,0,r*.7,-1.1,1.1);ctx.stroke();ctx.beginPath();ctx.arc(r*.8,0,r*.7,2.05,4.25);ctx.stroke();ctx.restore()}
 function currentPitchPose(){
  if(game.windup){
@@ -877,11 +982,11 @@ function draw(){
  // The moving bat meets the same point as the timing marker.
  ctx.strokeStyle='#6e431b';ctx.lineWidth=11;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(z.x-42,z.y+28);ctx.lineTo(z.x+Math.cos(t*Math.PI)*35,z.y-Math.sin(t*Math.PI)*15);ctx.stroke();ctx.strokeStyle='#ebc88b';ctx.lineWidth=7;ctx.stroke();
  }
- for(const e of effects){ctx.globalAlpha=Math.min(1,e.t*3);ctx.fillStyle=e.color;ctx.fillRect(e.x,e.y,3,3)}ctx.globalAlpha=1;drawCheers();
+ for(const e of effects){ctx.globalAlpha=Math.min(1,e.t*3);ctx.fillStyle=e.color;ctx.fillRect(e.x,e.y,3,3)}ctx.globalAlpha=1;drawJuice();drawCheers();
  if(pointer){const r=canvas.getBoundingClientRect(),x=(pointer.x-r.left)/r.width*W,y=(pointer.y-r.top)/r.height*H;ctx.strokeStyle='#d0f2dd44';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,25,0,7);ctx.stroke();const l=Math.hypot(aim.x,aim.y)||1;ctx.fillStyle='#deefd766';ctx.beginPath();ctx.arc(x+aim.x/l*Math.min(18,l),y+aim.y/l*Math.min(18,l),8,0,7);ctx.fill()}
- drawHoldLockAim();drawFtueGuide();ctx.restore();if(flash>0){ctx.fillStyle='#ff765329';ctx.fillRect(0,0,W,H)}
+ drawHoldLockAim();drawFtueGuide();ctx.restore();if(flash>0){ctx.fillStyle='#ff765329';ctx.fillRect(0,0,W,H)}drawNearMissVignette();
 }
-function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(ftueFade>0)ftueFade=Math.max(0,ftueFade-dt);if(ghostBatFade>0)ghostBatFade=Math.max(0,ghostBatFade-dt/.28);if(ghostBatSpark>0)ghostBatSpark=Math.max(0,ghostBatSpark-dt);if(game.state==='playing'){if(ftueActive){ftuePlayTime+=dt;if(ftuePlayTime>=30)dismissFtue()}let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';if(phaseBannerTime>0){phaseBannerTime-=dt;if(phaseBannerTime<=0)hidePhaseBanner()}callTime-=dt;if(callTime<=0)$('#pitchcall').textContent='';pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0)}if(cheers.length)updateCheers(dt);draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
+function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(ftueFade>0)ftueFade=Math.max(0,ftueFade-dt);if(ghostBatFade>0)ghostBatFade=Math.max(0,ghostBatFade-dt/.28);if(ghostBatSpark>0)ghostBatSpark=Math.max(0,ghostBatSpark-dt);if(game.state==='playing'){if(ftueActive){ftuePlayTime+=dt;if(ftuePlayTime>=30)dismissFtue()}let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';if(phaseBannerTime>0){phaseBannerTime-=dt;if(phaseBannerTime<=0)hidePhaseBanner()}callTime-=dt;if(callTime<=0)$('#pitchcall').textContent='';pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0);updateJuice(dt)}else if(juiceFx.length||nearMissEdge>0)updateJuice(dt);if(cheers.length)updateCheers(dt);draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'read_baseball_game',description:'Read the current baseball parry match state.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({state:game.state,health:game.hp,bossHealth:game.boss,perfects:game.perfects,combo:game.combo,seconds:Math.floor(game.time)})})).catch(()=>{})}catch{}}
 
 function loadAsset(img,url){return new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error(url));img.src=url})}
