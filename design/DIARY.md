@@ -2,6 +2,40 @@
 
 한눈에 보기: [디자인 갤러리](index.html) · 미러 https://oh4789.github.io/Heedong-baseball/ · 전체 개발로그 `/workspace/game-development-log.md`
 
+## 2026-09-21 — hitstop·취약창·고스트 배트
+
+### 개선
+- Perfect hitstop + 터치 레이턴시 보정
+- 불꽃 회피 후 취약창×1.2 Perfect (금흰 글로우 매칭)
+- hold-lock용 고스트 배트 실루엣
+
+### 에셋·자료
+- ✅ [hitstop 티어 juice](assets/hitstop-tier-juice-v1.png)
+- ✅ [취약창 글로우](assets/vulnerable-window-glow-v1.png)
+- ✅ [고스트 배트 실루엣](assets/ghost-bat-silhouette-v1.png)
+- ✅ [오전 레퍼런스](research/refs-20260921-am.md)
+- ✅ [오후 레퍼런스](research/refs-20260921-pm.md)
+
+## 2026-09-15 — 아이디어 배치 몰입·FTUE·보스 페이즈
+
+### 개선
+- 30초 스윙 FTUE 히트존 가이드 · 페일라인 리뷰 카드
+- 피치 래더 SFX · 보스 페이즈 HP 청크/배너 · 이닝스톱 CTA
+- 친구 응원 FX · 텔레그래프 셰이프 랭귀지 · hold-lock 옵션 · 이지 실루엣
+
+### 에셋·자료
+- ✅ [FTUE 히트존](screens/ftue-hitzone-guide-v1.png)
+- ✅ [FTUE 드래그·릴리즈](screens/ftue-swing-drag-release-v1.png)
+- ✅ [페일라인 카드](screens/fail-line-card-v1.png)
+- ✅ [이닝스톱 CTA](screens/inning-stop-cta-v1.png)
+- ✅ [플레이 HUD 폴리시](screens/play-hud-polish-v1.png)
+- ✅ [결과 승리·공유 시안](screens/result-victory-v1.png) · [공유 카드](screens/result-share-card-v1.png)
+- ✅ [페이즈 HP 청크](assets/phase-hp-chunks-v1.png) · [보스 배너](assets/boss-phase-banner-v1.png)
+- ✅ [친구 응원](assets/friend-cheer-fx-v1.png) · [텔레그래프 셰이프](assets/telegraph-shape-lang-v1.png)
+- ✅ [hold-lock](assets/hold-lock-aim-v1.png) · [이지 실루엣](assets/easy-pitch-silhouette-v1.png)
+- ✅ [페일 리뷰 칩](assets/fail-review-chip-v1.png) · [near-miss](assets/near-miss-flash-v1.png)
+- ✅ [아이디어 배치 리서치](research/ideas-batch-20260915.md)
+
 ## 2026-09-14 — 런메타·몰입 juice·아트 폴리시·에셋 파이프라인
 
 ### 개선
@@ -38,46 +72,19 @@
 
 ## 최근 커밋 (참고)
 ```
-22c845a ui: polish titles catalog cards to design v1
-e9e35df fix: hide start panel horizontal records scrollbar
-5e3d0e4 fix: hide horizontal scrollbar on personal records
-f31baca ui: polish title chip and daily meta HUD to design v1
-0006604 ui: avoid nested scrollbar on result personal records
-2b9b5f3 ui: polish result panel to design v1
-f7e7085 ui: use Heedong boss close-up for start menu art
-0e5b879 ui: use true portrait stadium background v2
-8d613ab fix: cover-crop stadium v2 to portrait without stretch
-d14416a ui: swap stadium background to design v2
-c03b670 ui: polish swing zone colors from timing-ring v1
-0f604ac ui: polish perfect gold trail to design v1
-b1d8da6 ui: match fire telegraph to design palette v1
-05650e2 feat: expand heedong taunt lines
-56ca472 feat: defeat one-tap retry
-2cf08d6 feat: perfect gold trail polish
-942d988 feat: fire pitch 3-stage telegraph
-ddfc8bd fix: remove character letterbox cards and opaque pose backdrops
-37dfd2a test: multi-title unlock note + post-polish night regression
-bfe4252 fix: merge noteRun unlocks into daily clear note
-382e6f6 test: daily clear note no-false-unlock evidence
-004f18d fix: daily clear note only when title unlocked
-64633b6 test: locked-title toast evidence
-670011f ui: show locked-title toast inside titles catalog
-c9769fe test: night regression after daily board session PERFECTS
-3a903c7 test: board entry session PERFECT evidence
-2e62403 fix: daily board entry uses session PERFECT total
-46bbfb1 test: add daily PERFECT accumulate evidence
-0b07de9 fix: accumulate daily PERFECT across continue segments
-24bd92d test: add titles-open-header smoke evidence
-aad5056 ui: let header titles button work over start overlay
-f062d75 ui: pulse newly unlocked title cards in catalog
-1ba9b3d test: add daily-clear full-flow smoke evidence
-78d5e2f test: add start-menu-restore smoke evidence
-1ef46d9 ui: restore start menu after end/pause
-66750fd test: add today's match UI smoke evidence
-d2a68e1 feat: add today's match daily challenge card and ranking tab
-da8f8d6 ui: pin start CTA and strengthen PC SPACE hint
-a0b096d test: add titles chip/catalog smoke evidence
-9480d9d feat: run-meta titles chip and catalog (local unlock/equip)
+9c611e2 feat: add ghost bat silhouette for hold-lock
+52f8c43 ui: match vulnerable glow to gold-white design v1
+b559660 feat: fire dodge opens vulnerable window
+d04024a feat: perfect hitstop and touch latency compensate
+dbf3e17 feat: draw easy pitch silhouette when option on
+685d0e6 feat: add optional hold-lock aim assist
+79a0a49 feat: add telegraph shape language for windups
+a2b39c7 feat: add local friend cheer FX on perfect
+feb1961 feat: add inning-stop soft exit CTA
+ac61996 feat: add boss phase HP chunks and banner
+9f562aa feat: add procedural pitch-ladder SFX
+7f037b9 feat: add fail-line review card on result
+05e5f87 feat: add 30s swing FTUE hit-zone guide
 ```
 
-_자동 생성 2026-09-14. Director가 일자별로 갱신._
+_자동 갱신 2026-09-21. Director가 일자별로 갱신._
