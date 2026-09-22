@@ -2,6 +2,40 @@
 
 한눈에 보기: [디자인 갤러리](index.html) · 미러 https://oh4789.github.io/Heedong-baseball/ · 전체 개발로그 `/workspace/game-development-log.md`
 
+## 2026-09-22 저녁 — 손가락 위 가이드·칭호 토스트 반영
+
+### 개선
+- 드래그 중 **접점 링·궤도**를 손가락 위에 표시(판정 불변, 비주얼만) — 인게임 반영
+- 클리어 시 **칭호 해금 토스트**를 결과 CTA 위에 표시 — 인게임 반영
+- 오후 아이디어 배치: Soft Heat · BeatWarping 필 · 페이크아웃 투구쌍 (Director 검토용)
+
+### 에셋·자료
+- ✅ [손가락 위 판정·궤도 가이드 v1](screens/above-finger-guide-v1.png)
+- ✅ [프로그래머 스펙](refs/above-finger-guide-v1.md)
+- ✅ [오후 아이디어 배치](research/ideas-batch-20260922-pm.md)
+
+## 2026-09-22 오후 — 첫 불꽃 등장 카피 토스트
+
+### 개선
+- 첫 해저드(불꽃) 임박 시 **1회성 코칭 토스트** 시안(카피만, 규칙 변경 없음)
+- 컨텍스트 FTUE 힌트·논블로킹 토스트 모션 레퍼런스(오전 juice/telegraph와 분리)
+
+### 에셋·자료
+- ✅ [첫 불꽃 등장 카피 토스트 v1](assets/first-fire-intro-toast-v1.png)
+- ✅ [프로그래머 스펙](refs/first-fire-intro-toast-v1.md)
+- ✅ [오후 레퍼런스](research/refs-20260922-pm.md)
+
+## 2026-09-22 — juice sync·칭호 해금 토스트
+
+### 개선
+- Perfect 트레일 + hitstop juice **동시 spawn 프레임** 동기화 레퍼런스 정리(판정 변경 없음)
+- 클리어 시 칭호 해금 토스트 연출 시안(결과 CTA 위)
+
+### 에셋·자료
+- ✅ [칭호 해금 토스트 v1](assets/title-unlock-toast-v1.png)
+- ✅ [프로그래머 스펙](refs/title-unlock-toast-v1.md)
+- ✅ [오전 레퍼런스](research/refs-20260922-am.md)
+
 ## 2026-09-21 — hitstop·취약창·고스트 배트
 
 ### 개선
