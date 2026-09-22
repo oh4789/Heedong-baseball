@@ -641,7 +641,50 @@ function inningStopHtml(){
   </div>
  </div>`;
 }
+let titleUnlockToastTimer=0;
+function hideTitleUnlockToast(){
+ if(titleUnlockToastTimer){clearTimeout(titleUnlockToastTimer);titleUnlockToastTimer=0}
+ const el=$('#title-unlock-toast');
+ if(!el)return;
+ el.classList.remove('show','pop','hold','fade');
+ el.hidden=true;
+}
+function showTitleUnlockToast(){
+ // Visual only — only when a NEW unlock note exists after end/noteRun
+ const list=(typeof TitleBook!=='undefined'&&TitleBook.lastNewUnlocks)||[];
+ if(!list.length){hideTitleUnlockToast();return}
+ const name=list[0]?.name||'';
+ if(!name){hideTitleUnlockToast();return}
+ hideTitleUnlockToast();
+ let el=$('#title-unlock-toast');
+ const host=$('#overlay')||$('#game');
+ if(!el){
+  el=document.createElement('div');
+  el.id='title-unlock-toast';
+  el.className='title-unlock-toast';
+  el.setAttribute('role','status');
+  el.setAttribute('aria-live','polite');
+  host.append(el);
+ }
+ el.innerHTML='<div class="title-unlock-toast-card"><span class="title-unlock-toast-badge" aria-hidden="true">★</span><div class="title-unlock-toast-l1">칭호 해금!</div><div class="title-unlock-toast-l2"></div><div class="title-unlock-toast-rule" aria-hidden="true"></div><div class="title-unlock-toast-l3">도감에서 확인</div></div>';
+ el.querySelector('.title-unlock-toast-l2').textContent=name;
+ el.hidden=false;
+ el.classList.remove('show','pop','hold','fade');
+ void el.offsetWidth;
+ el.classList.add('show','pop');
+ const reduced=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}})();
+ const popMs=reduced?0:120, holdMs=1200, fadeMs=reduced?0:200;
+ titleUnlockToastTimer=setTimeout(()=>{
+  el.classList.add('hold');
+  titleUnlockToastTimer=setTimeout(()=>{
+   el.classList.remove('pop','hold');
+   el.classList.add('fade');
+   titleUnlockToastTimer=setTimeout(()=>{el.hidden=true;el.classList.remove('show','fade');titleUnlockToastTimer=0},fadeMs);
+  },holdMs);
+ },popMs);
+}
 function clearOverlayPanelMode(){
+ hideTitleUnlockToast();
  const overlay=$('#overlay');
  const panel=$('#overlay .panel');
  overlay.classList.remove('inning-stop-overlay');
@@ -670,6 +713,7 @@ function showWinResult(){
  $('#overlay').classList.remove('hidden');
  $('#overlay .panel').innerHTML=`<div class="panel-body">${resultBody}</div><div class="panel-cta">${upgradeHtml}${menuBtn}</div>`;
  SharedRanking.bindResult($('#overlay .panel'),{stage:game.stage,perfects:game.perfects,daily:DailyMatch.isActive()&&DailyMatch.state.cleared});
+ showTitleUnlockToast();
  $('#to-menu').onclick=()=>{DailyMatch.beginNormal();showStartMenu()};
  document.querySelectorAll('.upgrade').forEach(b=>b.onclick=()=>{if(game.chooseUpgrade(b.dataset.up))start('continue')});
  if(!choices.length)$('#continue-max').onclick=()=>start('continue');
@@ -682,6 +726,7 @@ function showDefeatResult(){
  const panel=$('#overlay .panel');
  panel.innerHTML=`<div class="panel-body">${resultBody}</div><div class="panel-cta"><button class="primary" id="retry">다시 승부하기 <span>↻</span></button>${menuBtn}</div>`;
  SharedRanking.bindResult(panel,{stage:game.stage,perfects:game.perfects,daily:DailyMatch.isActive()&&DailyMatch.state.cleared});
+ showTitleUnlockToast();
  $('#to-menu').onclick=()=>{DailyMatch.beginNormal();showStartMenu()};
  defeatRetryAt=performance.now()+250;
  const onRetry=e=>{if(e){e.preventDefault();e.stopPropagation()}tryDefeatRetry('btn')};

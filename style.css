@@ -475,3 +475,60 @@ footer>p{font-size:11px;color:#7191aa;margin:10px 0 0;opacity:.9}
 @media(prefers-reduced-motion:reduce){
  .coolbar i,.boss-phase-bar .boss-chunk i{transition:none}
 }
+
+
+/* Title unlock toast v1 (design/refs/title-unlock-toast-v1.md) — visual only */
+#title-unlock-toast{
+ position:absolute;left:50%;bottom:max(96px,calc(env(safe-area-inset-bottom) + 84px));
+ transform:translateX(-50%) scale(.86);z-index:6;width:min(360px,calc(100% - 40px));
+ pointer-events:none;opacity:0;will-change:transform,opacity;
+}
+#title-unlock-toast.show.pop{animation:title-unlock-toast-pop .12s cubic-bezier(.2,1.35,.4,1) forwards}
+#title-unlock-toast.show.hold{opacity:1;transform:translateX(-50%) scale(1)}
+#title-unlock-toast.show.fade{animation:title-unlock-toast-fade .2s ease forwards}
+@keyframes title-unlock-toast-pop{
+ from{opacity:0;transform:translateX(-50%) scale(.86)}
+ 70%{opacity:1;transform:translateX(-50%) scale(1.03)}
+ to{opacity:1;transform:translateX(-50%) scale(1)}
+}
+@keyframes title-unlock-toast-fade{
+ from{opacity:1;transform:translateX(-50%) scale(1)}
+ to{opacity:0;transform:translateX(-50%) scale(.96)}
+}
+#title-unlock-toast .title-unlock-toast-card{
+ position:relative;padding:26px 20px 16px;border-radius:18px;text-align:center;
+ background:linear-gradient(160deg,#0d2440e6,#081329f5);
+ border:1.5px solid #C3A4FFcc;
+ box-shadow:0 0 0 1px #C3A4FF55,0 0 28px #C3A4FF66,0 12px 36px #000a;
+ -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+}
+#title-unlock-toast .title-unlock-toast-badge{
+ position:absolute;left:50%;top:0;transform:translate(-50%,-55%);
+ width:40px;height:40px;border-radius:50%;
+ display:grid;place-items:center;font-size:18px;line-height:1;
+ color:#FFE09A;background:radial-gradient(circle at 40% 35%,#1a2e55,#081329);
+ border:1.5px solid #FFE09Acc;box-shadow:0 0 14px #C3A4FF88;
+}
+#title-unlock-toast .title-unlock-toast-l1{
+ margin:6px 0 4px;font-size:15px;font-weight:800;letter-spacing:-.2px;color:#F5E6C8;
+}
+#title-unlock-toast .title-unlock-toast-l2{
+ font-size:24px;font-weight:1000;letter-spacing:-.6px;color:#FFE09A;
+ text-shadow:0 0 16px #FFE09A55;
+}
+#title-unlock-toast .title-unlock-toast-rule{
+ width:72px;height:1px;margin:10px auto 8px;background:linear-gradient(90deg,transparent,#C3A4FFaa,transparent);
+ position:relative;
+}
+#title-unlock-toast .title-unlock-toast-rule::after{
+ content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;
+ transform:translate(-50%,-50%) rotate(45deg);background:#C3A4FF;
+}
+#title-unlock-toast .title-unlock-toast-l3{
+ font-size:12px;font-weight:600;color:#F5E6C8cc;letter-spacing:.2px;
+}
+@media (prefers-reduced-motion:reduce){
+ #title-unlock-toast.show.pop,#title-unlock-toast.show.fade{animation:none}
+ #title-unlock-toast.show.pop,#title-unlock-toast.show.hold{opacity:1;transform:translateX(-50%) scale(1)}
+ #title-unlock-toast.show.fade{opacity:0}
+}
