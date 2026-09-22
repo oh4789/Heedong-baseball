@@ -532,3 +532,62 @@ footer>p{font-size:11px;color:#7191aa;margin:10px 0 0;opacity:.9}
  #title-unlock-toast.show.pop,#title-unlock-toast.show.hold{opacity:1;transform:translateX(-50%) scale(1)}
  #title-unlock-toast.show.fade{opacity:0}
 }
+
+/* First-fire intro toast v1 (design/refs/first-fire-intro-toast-v1.md) — visual only */
+#first-fire-intro-toast{
+ position:absolute;left:50%;top:24%;
+ transform:translateX(-50%) scale(.88);z-index:6;width:min(360px,calc(100% - 40px));
+ pointer-events:none;opacity:0;will-change:transform,opacity;
+}
+#first-fire-intro-toast.show.pop{animation:first-fire-intro-toast-pop .15s cubic-bezier(.2,1.35,.4,1) forwards}
+#first-fire-intro-toast.show.hold{opacity:1;transform:translateX(-50%) scale(1)}
+#first-fire-intro-toast.show.fade{animation:first-fire-intro-toast-fade .2s ease forwards}
+@keyframes first-fire-intro-toast-pop{
+ from{opacity:0;transform:translateX(-50%) scale(.88)}
+ 70%{opacity:1;transform:translateX(-50%) scale(1.03)}
+ to{opacity:1;transform:translateX(-50%) scale(1)}
+}
+@keyframes first-fire-intro-toast-fade{
+ from{opacity:1;transform:translateX(-50%) scale(1)}
+ to{opacity:0;transform:translateX(-50%) scale(.96)}
+}
+#first-fire-intro-toast .first-fire-intro-toast-card{
+ position:relative;padding:26px 20px 14px;border-radius:18px;text-align:center;
+ background:linear-gradient(160deg,#0d2440e6,#081329f5);
+ border:1.5px solid #FF7A6Ecc;
+ box-shadow:0 0 0 1px #FF5A2A55,0 0 28px #FF7A6E66,0 12px 36px #000a;
+ -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+}
+#first-fire-intro-toast .first-fire-intro-toast-badge{
+ position:absolute;left:50%;top:0;transform:translate(-50%,-55%);
+ width:40px;height:40px;border-radius:50%;
+ display:grid;place-items:center;font-size:18px;line-height:1;
+ color:#FFE09A;background:radial-gradient(circle at 40% 35%,#3a1a14,#081329);
+ border:1.5px solid #FF7A6Ecc;box-shadow:0 0 14px #FF5A2A88;
+}
+#first-fire-intro-toast .first-fire-intro-toast-l1{
+ margin:6px 0 6px;font-size:18px;font-weight:900;letter-spacing:-.3px;color:#F5E6C8;
+}
+#first-fire-intro-toast .first-fire-intro-toast-l2{
+ font-size:13px;font-weight:700;letter-spacing:-.1px;color:#F5E6C8cc;
+ display:flex;align-items:center;justify-content:center;gap:8px;
+}
+#first-fire-intro-toast .first-fire-intro-toast-chev{
+ color:#FFAB88;font-weight:900;font-size:14px;text-shadow:0 0 8px #FF5A2A66;
+}
+#first-fire-intro-toast .first-fire-intro-toast-rule{
+ width:72px;height:1px;margin:10px auto 8px;background:linear-gradient(90deg,transparent,#FF7A6Eaa,transparent);
+ position:relative;
+}
+#first-fire-intro-toast .first-fire-intro-toast-rule::after{
+ content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;
+ transform:translate(-50%,-50%) rotate(45deg);background:#FF7A6E;
+}
+#first-fire-intro-toast .first-fire-intro-toast-l3{
+ font-size:12px;font-weight:600;color:#F5E6C899;letter-spacing:.2px;
+}
+@media (prefers-reduced-motion:reduce){
+ #first-fire-intro-toast.show.pop,#first-fire-intro-toast.show.fade{animation:none}
+ #first-fire-intro-toast.show.pop,#first-fire-intro-toast.show.hold{opacity:1;transform:translateX(-50%) scale(1)}
+ #first-fire-intro-toast.show.fade{opacity:0}
+}
