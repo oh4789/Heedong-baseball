@@ -611,3 +611,14 @@ footer>p{font-size:11px;color:#7191aa;margin:10px 0 0;opacity:.9}
  #first-fire-intro-toast.show.fade{animation:none;opacity:0}
  #first-fire-intro-toast.show.fade-rm{animation:first-fire-intro-toast-fade-rm .12s ease forwards}
 }
+
+/* aimLockFire callout — coral border feel; keep copy ⚠ 고정 조준 · 피하세요; ban #FF3B3B */
+#pitchcall.aim-bait{
+ color:#FFC9A8;
+}
+#pitchcall.aim-bait span{
+ border:1.5px solid #FF986Ecc;
+ background:#120a10e8;
+ box-shadow:0 0 0 1px #FFAB8844,0 0 16px #FF986E55,0 6px 18px #0008;
+ color:#FFC9A8;
+}
