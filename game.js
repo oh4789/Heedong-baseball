@@ -4,6 +4,21 @@ let fireCoachShown=false;let perfectStreak=0;let defeatRetryAt=0;
 let juiceFx=[],nearMissEdge=0,vulnToastDelay=0;
 let camPunch=0,camPunchLife=0;const CAM_PUNCH_LIFE=2/60;
 const reduceMotion=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}};
+// VFX 4-lane readability v1 — clash clamps only (A: fire tel↔Perfect impact; B: hit flash↔first-fire toast)
+const VFX_IMPACT_VIEW_MAX=0.15;
+function isFireTelegraphActive(){
+ // Lane1 threat tel: fire windup 3-stage OR fireball in flight (fakeFire mint warmup excluded)
+ const w=game.windup;
+ if(w&&w.type==='fire')return true;
+ return game.balls.some(b=>b.t>=0&&b.type==='fire');
+}
+function isFirstFireIntroToastVisible(){
+ const el=$('#first-fire-intro-toast');
+ return !!(el&&!el.hidden&&el.classList.contains('show'));
+}
+function impactMaxRadius(frac=VFX_IMPACT_VIEW_MAX){
+ return Math.sqrt((frac*W*H)/Math.PI);
+}
 function setFlash(dur,tone){
  // Global fullscreen fill tone — hit-juice-budget cream/mint/gold; damage warm peach (no #FF3B3B)
  if(dur==null||dur<=0)return;
@@ -378,16 +393,23 @@ function beginHeedongHitJuice(perfect){
  // Receiver-only silhouette flash (+ Perfect micro recoil). Miss/vulnerable must not call this.
  // Separate from setFlash (global), bossImpact ring, Trauma² cam, hitstop, bat/ball juice.
  const isPerfect=!!perfect;
+ const toastUp=isFirstFireIntroToastVisible();
  if(reduceMotion()){
   // RM: recoil OFF; flash 1–2f snap allowed
   heedongHitFlash=2/60;heedongHitFlashLife=2/60;
-  heedongHitFlashPeak=isPerfect?1:.55;
+  heedongHitFlashPeak=toastUp?(isPerfect?.38:.2):(isPerfect?1:.55); // clash B: no full-white w/ toast
   heedongRecoil=null;
   return;
  }
- const flashDur=isPerfect?HEEDONG_FLASH_PERFECT:HEEDONG_FLASH_GOOD;
- heedongHitFlash=flashDur;heedongHitFlashLife=flashDur;
- heedongHitFlashPeak=isPerfect?1:.55;
+ if(toastUp){
+  // Clash B (lane2↔toast): snap-only + lowered peak — ban full-white same frame as first-fire toast
+  heedongHitFlash=1/60;heedongHitFlashLife=1/60;
+  heedongHitFlashPeak=isPerfect?.38:.2;
+ }else{
+  const flashDur=isPerfect?HEEDONG_FLASH_PERFECT:HEEDONG_FLASH_GOOD;
+  heedongHitFlash=flashDur;heedongHitFlashLife=flashDur;
+  heedongHitFlashPeak=isPerfect?1:.55;
+ }
  if(isPerfect){
   heedongRecoil={t:0,dur:HEEDONG_RECOIL_DUR,ox0:HEEDONG_RECOIL_PX};
  }else{
@@ -417,7 +439,10 @@ function heedongFlashAlpha(){
  const u=heedongHitFlash/heedongHitFlashLife; // 1→0
  // Ease-out: stay hot early, fall off
  const ease=u*u;
- return heedongHitFlashPeak*ease;
+ let peak=heedongHitFlashPeak;
+ // Clash B draw-safe: toast may still be up if flash started earlier
+ if(isFirstFireIntroToastVisible())peak=Math.min(peak,.38);
+ return peak*ease;
 }
 function drawHeedongSprite(img,sx,sy,sw,sh,dx,dy,dw,dh,whiteAmt){
  if(!(whiteAmt>0.01)){
@@ -831,7 +856,14 @@ function spawnGoodHitJuice(x,y){
 }
 function spawnPerfectHitJuice(x,y){
  // Budget Perfect: directional sparks 16–24 ~180–220ms (+ purple accent)
+ // Clash A: fire tel active → fewer/shorter sparks; sunburst marked for ≤15% cover draw clamp
+ const fireTel=isFireTelegraphActive();
  if(reduceMotion()){spawnDirectionalSparks(x,y,4,.12);return}
+ if(fireTel){
+  juiceFx.push({kind:'sunburst',x,y,t:.22,life:.22,spin:Math.random()*Math.PI,fireTelClamp:true});
+  spawnDirectionalSparks(x,y,8,.12);
+  return;
+ }
  spawnSunburst(x,y);
  const n=16+(Math.random()*9|0);
  spawnDirectionalSparks(x,y,n,.2);
@@ -851,10 +883,16 @@ function beatWarpOffset(strength){
 }
 function spawnBeatStinger(x,y,tier){
  // Contact flash channel — gold Perfect (1–2f), cream/mint Good (1f)
+ // Clash A: while fire tel active, clamp Perfect flash/stinger to ≤~15% view + keep gold/cream (no threat coral)
+ const fireTel=isFireTelegraphActive();
+ const maxR=impactMaxRadius();
  if(tier==='perfect'){
-  if(!reduceMotion())juiceFx.push({kind:'beatStinger',x,y,t:.32,life:.32,tier:'perfect'});
-  juiceFx.push({kind:'beatFlash',x,y,t:reduceMotion()?1/60:2/60,life:reduceMotion()?1/60:2/60,color:'#FFE09A',r0:10,r1:68});
-  if(!reduceMotion())juiceFx.push({kind:'beatFlash',x,y,t:2/60,life:2/60,color:'#C3A4FF',r0:6,r1:40});
+  const life=reduceMotion()?1/60:(fireTel?Math.min(2/60,.055):2/60); // peak ~40–90ms; RM ≤40ms/1f
+  const r1=fireTel?Math.min(68,maxR*.42):68;
+  const r1b=fireTel?Math.min(40,maxR*.28):40;
+  if(!reduceMotion())juiceFx.push({kind:'beatStinger',x,y,t:fireTel?0.18:0.32,life:fireTel?0.18:0.32,tier:'perfect',fireTelClamp:fireTel});
+  juiceFx.push({kind:'beatFlash',x,y,t:life,life,color:'#FFE09A',r0:fireTel?6:10,r1,fireTelClamp:fireTel});
+  if(!reduceMotion())juiceFx.push({kind:'beatFlash',x,y,t:life,life,color:'#C3A4FF',r0:4,r1:r1b,fireTelClamp:fireTel});
  }else{
   juiceFx.push({kind:'beatFlash',x,y,t:1/60,life:1/60,color:reduceMotion()?'#F7F3E8':'#A8E8FF',r0:6,r1:44});
  }
@@ -864,7 +902,8 @@ function fireBeatWarpImpact(tier,x,y){
  // Freeze durations unchanged (hitstop channel). Particle/flash amounts follow hit-juice-budget.
  const cx=x??(game.zone?.x??240),cy=y??(game.zone?.y??650);
  if(tier==='perfect'){
-  setFlash(reduceMotion()?1/60:2/60,'gold');
+  // Clash A: gold/cream only; setFlash draw path localizes if fire tel active
+  setFlash(reduceMotion()?1/60:(isFireTelegraphActive()?0.055:2/60),'gold');
   spawnBeatStinger(cx,cy,'perfect');
   spawnPerfectHitJuice(cx,cy);
   spawnPerfectGradePop(cx,cy-28);
@@ -939,34 +978,44 @@ function drawJuice(){
    ctx.restore();
   }else if(j.kind==='beatFlash'){
    // Soft radial mint/gold flash ring (beatwarp impact channel)
-   const r=j.r0+(j.r1-j.r0)*Math.min(1,p*1.2);
+   const fireClamp=j.fireTelClamp||isFireTelegraphActive();
+   const maxR=impactMaxRadius();
+   let r1=j.r1,r0=j.r0;
+   if(fireClamp){r1=Math.min(r1,maxR*.42);r0=Math.min(r0,r1*.35)}
+   const r=r0+(r1-r0)*Math.min(1,p*1.2);
    ctx.save();ctx.globalAlpha=fade*.85;ctx.strokeStyle=j.color;ctx.fillStyle=j.color+'33';
-   ctx.shadowColor=j.color;ctx.shadowBlur=18;ctx.lineWidth=3.2*(1-p*.5);
+   ctx.shadowColor=j.color;ctx.shadowBlur=fireClamp?10:18;ctx.lineWidth=3.2*(1-p*.5);
    ctx.beginPath();ctx.arc(j.x,j.y,r,0,7);ctx.stroke();
-   ctx.globalAlpha=fade*.35;ctx.beginPath();ctx.arc(j.x,j.y,r*.45,0,7);ctx.fill();
+   ctx.globalAlpha=fade*(fireClamp?.22:.35);ctx.beginPath();ctx.arc(j.x,j.y,r*.45,0,7);ctx.fill();
    ctx.shadowBlur=0;ctx.restore();
   }else if(j.kind==='beatStinger'){
    // Large gold Perfect spark ring — distinct from sunburst rays
-   ctx.save();ctx.translate(j.x,j.y);ctx.rotate(p*.55);ctx.globalAlpha=fade;
-   const rays=10;
+   const fireClamp=j.fireTelClamp||isFireTelegraphActive();
+   const maxR=impactMaxRadius();
+   const lenScale=fireClamp?Math.min(1,(maxR*.5)/72):1;
+   ctx.save();ctx.translate(j.x,j.y);ctx.rotate(p*.55);ctx.globalAlpha=fade*(fireClamp?.7:1);
+   const rays=fireClamp?6:10;
    for(let i=0;i<rays;i++){
-    const a=i/rays*Math.PI*2,len=36+(i%2)*14+p*22;
-    const col=i%2===0?'#FFE09A':'#FFD25B';
-    ctx.strokeStyle=col;ctx.lineWidth=i%2===0?3.4:2.2;ctx.shadowColor=col;ctx.shadowBlur=14;
+    const a=i/rays*Math.PI*2,len=(36+(i%2)*14+p*22)*lenScale;
+    const col=i%2===0?'#FFE09A':'#FFD25B'; // impact gold — never threat #FF986E/#FF7A50
+    ctx.strokeStyle=col;ctx.lineWidth=(i%2===0?3.4:2.2)*lenScale;ctx.shadowColor=col;ctx.shadowBlur=fireClamp?8:14;
     ctx.beginPath();ctx.moveTo(Math.cos(a)*4,Math.sin(a)*4);ctx.lineTo(Math.cos(a)*len,Math.sin(a)*len);ctx.stroke();
    }
-   ctx.shadowBlur=22;ctx.fillStyle='#FFE09A';ctx.beginPath();ctx.arc(0,0,10+p*6,0,7);ctx.fill();
-   ctx.fillStyle='#FFD25B';ctx.beginPath();ctx.arc(0,0,5+p*2,0,7);ctx.fill();
+   ctx.shadowBlur=fireClamp?10:22;ctx.fillStyle='#FFE09A';ctx.beginPath();ctx.arc(0,0,(10+p*6)*lenScale,0,7);ctx.fill();
+   ctx.fillStyle='#FFD25B';ctx.beginPath();ctx.arc(0,0,(5+p*2)*lenScale,0,7);ctx.fill();
    ctx.shadowBlur=0;ctx.restore();
   }else if(j.kind==='sunburst'){
-   ctx.save();ctx.translate(j.x,j.y);ctx.rotate((j.spin||0)+p*.4);ctx.globalAlpha=fade;
-   const rays=14;
+   const fireClamp=j.fireTelClamp||isFireTelegraphActive();
+   const maxR=impactMaxRadius();
+   const lenScale=fireClamp?Math.min(1,(maxR*.48)/66):1;
+   ctx.save();ctx.translate(j.x,j.y);ctx.rotate((j.spin||0)+p*.4);ctx.globalAlpha=fade*(fireClamp?.65:1);
+   const rays=fireClamp?8:14;
    for(let i=0;i<rays;i++){
-    const a=i/rays*Math.PI*2,len=28+(i%3)*10+p*18,col=i%3===0?'#C3A4FF':'#FFD25B';
-    ctx.strokeStyle=col;ctx.lineWidth=i%3===0?2:2.8;ctx.shadowColor=col;ctx.shadowBlur=10;
+    const a=i/rays*Math.PI*2,len=(28+(i%3)*10+p*18)*lenScale,col=i%3===0?'#C3A4FF':'#FFD25B';
+    ctx.strokeStyle=col;ctx.lineWidth=(i%3===0?2:2.8)*lenScale;ctx.shadowColor=col;ctx.shadowBlur=fireClamp?6:10;
     ctx.beginPath();ctx.moveTo(Math.cos(a)*6,Math.sin(a)*6);ctx.lineTo(Math.cos(a)*len,Math.sin(a)*len);ctx.stroke();
    }
-   ctx.shadowBlur=16;ctx.fillStyle='#FFE09A';ctx.beginPath();ctx.arc(0,0,8+p*4,0,7);ctx.fill();
+   ctx.shadowBlur=fireClamp?8:16;ctx.fillStyle='#FFE09A';ctx.beginPath();ctx.arc(0,0,(8+p*4)*lenScale,0,7);ctx.fill();
    ctx.shadowBlur=0;ctx.restore();
   }else if(j.kind==='gradePop'){
    // Perfect grade pop: glow/scale only — no score numbers / Early/Late
@@ -1469,7 +1518,13 @@ function drawPitcher(){
  }
  ctx.restore();
  const fade=ctx.createLinearGradient(0,400,0,442);fade.addColorStop(0,'#18362900');fade.addColorStop(.45,'#18362988');fade.addColorStop(1,'#18362900');ctx.fillStyle=fade;ctx.fillRect(0,400,480,42);
- if(bossImpact>0){ctx.strokeStyle='#ffe3a1';ctx.globalAlpha=bossImpact*3;ctx.lineWidth=2;ctx.beginPath();ctx.arc(240,290,18+(1-bossImpact/.2)*20,0,7);ctx.stroke();ctx.globalAlpha=1}
+ if(bossImpact>0){
+  if(isFireTelegraphActive()){
+   // Clash A: gold impact ring must not cover active fire tel silhouette at mound — skip while tel owns lane1
+  }else{
+   ctx.strokeStyle='#ffe3a1';ctx.globalAlpha=bossImpact*3;ctx.lineWidth=2;ctx.beginPath();ctx.arc(240,290,18+(1-bossImpact/.2)*20,0,7);ctx.stroke();ctx.globalAlpha=1;
+  }
+ }
  if(game.vulnerable>0){
   // vulnerable-window-glow-v1: strong white-gold at open → weak gold as it fades (no red)
   const remain=Math.min(1,game.vulnerable/2);
@@ -1796,7 +1851,18 @@ function draw(){
    cream:`rgba(247,243,232,${a*.55})`, // #F7F3E8
    damage:`rgba(255,201,168,${a*.9})` // #FFC9A8 warm peach — distinct from dodge red
   };
-  ctx.fillStyle=tones[flashTone]||tones.gold;ctx.fillRect(0,0,W,H);
+  const impactTone=flashTone==='gold'||flashTone==='cream';
+  if(impactTone&&isFireTelegraphActive()){
+   // Clash A: no fullscreen wash over fire tel — local ≤15% gold/cream bloom at contact
+   const zx=game.zone?.x??240,zy=game.zone?.y??650;
+   const R=impactMaxRadius()*0.9;
+   const g=ctx.createRadialGradient(zx,zy,0,zx,zy,R);
+   const core=flashTone==='cream'?`rgba(247,243,232,${a*.7})`:`rgba(255,224,154,${a})`;
+   g.addColorStop(0,core);g.addColorStop(1,'rgba(255,224,154,0)');
+   ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  }else{
+   ctx.fillStyle=tones[flashTone]||tones.gold;ctx.fillRect(0,0,W,H);
+  }
 }
  if(camPunchLife>0){
   const p=camPunchLife/CAM_PUNCH_LIFE;
