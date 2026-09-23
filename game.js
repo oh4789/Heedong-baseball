@@ -564,11 +564,16 @@ function updateBossPhaseHud(){
  const bar=$('#bossbar');if(!bar||!bar.classList.contains('boss-phase-bar'))return;
  const ratio=game.bossMax>0?Math.max(0,game.boss/game.bossMax):0;
  const chunks=bar.querySelectorAll('.boss-chunk');
+ const rm=reduceMotion();
  chunks.forEach((el,i)=>{
   const lo=i/3,hi=(i+1)/3;
   const fill=Math.max(0,Math.min(1,(ratio-lo)/Math.max(1e-6,hi-lo)));
   const fillEl=el.querySelector('i');
-  if(fillEl)fillEl.style.width=(fill*100)+'%';
+  if(fillEl){
+   // Match HUD_EASE_DUR 160ms ease-out; reduced-motion snaps
+   fillEl.style.transition=rm?'none':'width .16s ease-out';
+   fillEl.style.width=(fill*100)+'%';
+  }
   if(fill<=0)el.classList.add('empty');else el.classList.remove('empty');
  });
  const now=phaseChunksFromRatio(ratio);
