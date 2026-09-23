@@ -2,6 +2,49 @@
 
 한눈에 보기: [디자인 갤러리](index.html) · 미러 https://oh4789.github.io/Heedong-baseball/ · 전체 개발로그 `/workspace/game-development-log.md`
 
+## 2026-09-23 저녁 — 고정형 유도 불꽃(aim-lock bait fire) 시안
+
+### 개선
+- hold-lock/고정 조준 시 **lockX 스냅샷 불꽃** 비주얼 보드(민트 펄스→코랄 레인, 호밍 없음 vs 옆이동)
+- 베이트 텔·고정타격 레퍼런스 2건(오전·오후와 분리)
+
+### 에셋·자료
+- ✅ [고정형 유도 불꽃 v1](assets/aim-lock-bait-fire-v1.png)
+- ✅ [프로그래머 스펙](refs/aim-lock-bait-fire-v1.md) (비주얼/크롭 섹션 추가)
+- ✅ [저녁 레퍼런스](research/refs-20260923-evening.md)
+
+## 2026-09-23 오후 — 피격 플래시·공 그림자·VFX 4레인
+
+### 개선
+- Perfect/Good 시 **희동이 수신 측** 화이트 플래시 + 미세 리코일 — 인게임 반영
+- 공 **그림자 크기·오프셋**으로 접근 깊이 큐(불꽃 착지 오벌 아래 페이드) — 인게임 반영
+- VFX **4레인 가독성**(위협 텔 vs 임팩트 충돌 클램프·분위기 레인 토글) — 인게임 반영
+
+### 에셋·자료
+- ✅ [희동이 피격 플래시·리코일 v1](assets/heedong-hit-flash-recoil-v1.png)
+- ✅ [공 그림자 깊이 큐 v1](assets/ball-shadow-depth-cue-v1.png)
+- ✅ [VFX 4레인 가독성 v1](assets/vfx-4lane-readability-v1.png)
+- ✅ [프로그래머 스펙](refs/heedong-hit-flash-recoil-v1.md) · [그림자](refs/ball-shadow-depth-cue-v1.md) · [4레인](refs/vfx-4lane-readability-v1.md)
+- ✅ [오후 레퍼런스](research/refs-20260923-pm.md) · [아이디어 배치](research/ideas-batch-20260923-pm.md)
+
+## 2026-09-23 오전 — 토스트 모션·티핑·juice
+
+### 개선
+- 첫 불꽃 코칭 토스트의 **idle→pop→hold→fade** 4프레임 가로 시트(연출만, 판정 불변)
+- 토스트 스프링 enter/overshoot settle 레퍼런스 2건
+- 투구 **몸짓 티핑**·Perfect **Trauma² 캠 펀치** 시안 → 인게임 반영
+- 스윙 **스미어·팔로우스루**, Miss/Good/Perfect **juice 예산**, settle·idle fidget — 인게임 반영
+
+### 에셋·자료
+- ✅ [첫 불꽃 토스트 모션 시트 v1](assets/first-fire-toast-motion-sheet-v1.png)
+- ✅ [투구 티핑 포즈 v1](assets/pitch-tipping-poses-v1.png)
+- ✅ [Perfect Trauma² 캠 펀치 v1](assets/perfect-trauma-cam-punch-v1.png)
+- ✅ [스윙 스미어·팔로우스루 v1](assets/swing-smear-followthrough-v1.png)
+- ✅ [히트 juice 예산 v1](assets/hit-juice-budget-v1.png)
+- ✅ [피치 settle·idle fidget v1](assets/pitch-settle-idle-fidget-v1.png)
+- ✅ [프로그래머 스펙](refs/first-fire-toast-motion-sheet-v1.md) · [티핑](refs/pitch-tipping-poses-v1.md) · [캠](refs/perfect-trauma-cam-punch-v1.md)
+- ✅ [오전 레퍼런스](research/refs-20260923-am.md) · [오전 아이디어](research/ideas-batch-20260923-am.md) · [사전 juice](research/ideas-batch-20260923-pm-juice-earlier.md)
+
 ## 2026-09-22 저녁 — 손가락 위 가이드·칭호 토스트 반영
 
 ### 개선
@@ -13,6 +56,8 @@
 - ✅ [손가락 위 판정·궤도 가이드 v1](screens/above-finger-guide-v1.png)
 - ✅ [프로그래머 스펙](refs/above-finger-guide-v1.md)
 - ✅ [오후 아이디어 배치](research/ideas-batch-20260922-pm.md)
+- ✅ [페이크아웃 투구쌍 v1](assets/fakeout-pitch-pair-v1.png)
+- ✅ [BeatWarp 임팩트 v1](assets/beatwarp-impact-v1.png)
 
 ## 2026-09-22 오후 — 첫 불꽃 등장 카피 토스트
 
@@ -121,4 +166,4 @@ ac61996 feat: add boss phase HP chunks and banner
 05e5f87 feat: add 30s swing FTUE hit-zone guide
 ```
 
-_자동 갱신 2026-09-21. Director가 일자별로 갱신._
+_자동 갱신 2026-09-23. Director가 일자별로 갱신._
