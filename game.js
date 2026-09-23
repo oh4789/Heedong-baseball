@@ -1355,18 +1355,22 @@ function drawBallDepthShadow(b,r,fire){
  const approach01=ballApproach01(b);
  const shadowScale=depthLerp(0.35,1.0,approach01);
  const gapPx=depthLerp(70,12,approach01);
+ const landingOval01=depthClamp01((b.y-420)/60);
+ const highApproach01=depthClamp01((approach01-.75)/.25);
+ const fireShadowFade01=fire?Math.max(landingOval01,highApproach01):0;
+ const shadowAlphaMul=depthLerp(1,.32,fireShadowFade01);
  const lite=depthCueLite();
  const sx=b.x,sy=b.y+gapPx;
  const rx=Math.max(4,r*2.2*shadowScale);
  const ry=Math.max(2.2,r*0.7*shadowScale);
  ctx.save();
- ctx.globalAlpha=.34+.3*approach01;
+ ctx.globalAlpha=(.34+.3*approach01)*shadowAlphaMul;
  ctx.fillStyle='#081329';
  if(!lite){ctx.shadowColor='#08132988';ctx.shadowBlur=8+10*shadowScale}
  ctx.beginPath();ctx.ellipse(sx,sy,rx,ry,0,0,7);ctx.fill();
  ctx.shadowBlur=0;
  if(!lite){
-  ctx.globalAlpha=.16+.14*approach01;
+  ctx.globalAlpha=(.16+.14*approach01)*shadowAlphaMul;
   ctx.fillStyle='#0a1830';
   ctx.beginPath();ctx.ellipse(sx,sy,rx*.7,ry*.7,0,0,7);ctx.fill();
  }
