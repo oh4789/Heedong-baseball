@@ -40,6 +40,7 @@ const PHASE_LINES={2:'희동이: 이제 진지하게 간다',3:'희동이: 끝�
 const FTUE_KEY='beat-heedong.ftue-hitzone-v1';
 const OPT_HOLD_LOCK='beat-heedong.opt-hold-lock';
 const OPT_EASY_SIL='beat-heedong.opt-easy-silhouette';
+const OPT_VFX_MOOD='beat-heedong.vfx-mood-v1'; // lane-4 mood; default ON
 let ftueActive=false,ftueFade=0,ftuePlayTime=0,ftuePitchCount=0;
 let gestureOptsReturn=null;
 // Ghost bat silhouette guide (hold-lock visual only; judgment untouched)
@@ -69,6 +70,7 @@ function getOptFlag(key,def='0'){try{const v=localStorage.getItem(key);return v=
 function setOptFlag(key,on){try{localStorage.setItem(key,on?'1':'0')}catch{}}
 function holdLockOn(){return getOptFlag(OPT_HOLD_LOCK)==='1'}
 function easySilhouetteOn(){return getOptFlag(OPT_EASY_SIL)==='1'}
+function vfxMoodEnabled(){return getOptFlag(OPT_VFX_MOOD,'1')==='1'} // lane 4; OFF strips cheer FX (lanes 1–3 stay)
 function ftueGuidePrefOn(){return !ftueSeen()}
 function setFtueGuidePref(on){try{if(on)localStorage.removeItem(FTUE_KEY);else localStorage.setItem(FTUE_KEY,'1')}catch{}}
 // Heedong taunt pool for damage/whiff reactions (engine emits fixed lines; diversify here)
@@ -1036,9 +1038,12 @@ function drawNearMissVignette(){
  g.addColorStop(0,'rgba(255,90,42,0)');g.addColorStop(.55,'rgba(255,90,42,0)');g.addColorStop(1,`rgba(255,90,42,${a})`);
  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
 }
+// Lane-4 mood clear (cheer FX). Ambient motes not present in build — cheer is the gated channel.
+function clearMoodLane(){cheers=[]}
 // Local/fake friend cheer FX (design/refs/friend-cheer-fx-v1.md) — canvas particles only, no hitstop.
 const CHEER_CREAM='#F7F3E8',CHEER_MINT='#9BFFE6',CHEER_CORAL='#FF986E',CHEER_GOLD='#FFE09A';
 function spawnFriendCheer(x,y,{power=1}={}){
+ if(!vfxMoodEnabled())return; // lane-4 mood OFF: no cheer FX
  const cx=x??(game.zone?.x??240),cy=y??(game.zone?.y??650);
  const life=.55+power*.08; // ~0.6s
  cheers.push({kind:'clap',x:cx,y:cy,t:life,life,scale:.8+power*.35});
@@ -1078,7 +1083,7 @@ function drawCheerStar(x,y,r){
  ctx.closePath();ctx.fill();
 }
 function drawCheers(){
- if(!cheers.length)return;
+ if(!vfxMoodEnabled()||!cheers.length)return;
  for(const c of cheers){
   const p=1-c.t/c.life,fade=Math.min(1,c.t*3.2)*(1-Math.max(0,p-.75)/.25);
   if(c.kind==='clap'){
@@ -1332,16 +1337,17 @@ function end(){
  showDefeatResult();
 }
 function gestureOptsHtml(){
- const hold=holdLockOn(),ftue=ftueGuidePrefOn(),sil=easySilhouetteOn();
+ const hold=holdLockOn(),ftue=ftueGuidePrefOn(),sil=easySilhouetteOn(),mood=vfxMoodEnabled();
  const row=(id,label,on)=>`<div class="gesture-opt-row"><div class="gesture-opt-label">${label}</div><button type="button" class="gesture-toggle${on?' is-on':''}" id="${id}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"><span class="gesture-toggle-knob" aria-hidden="true"></span><span class="gesture-toggle-text">${on?'ON':'OFF'}</span></button></div>`;
- return `<div class="panel-body gesture-opts-body"><div class="gesture-opts-head"><span class="gesture-opts-icon" aria-hidden="true">☝</span><div><span class="eyebrow">GESTURE OPT</span><h1 class="gesture-opts-title">제스처 옵션</h1></div><button type="button" class="gesture-opts-close" id="gesture-opts-close" aria-label="닫기">×</button></div><div class="gesture-opt-list">${row('opt-hold-lock','홀드 록 (조준 고정)',hold)}${row('opt-ftue-guide','FTUE 손 가이드',ftue)}${row('opt-easy-sil','쉬운 구 실루엣',sil)}</div><p class="gesture-opts-hint">홀드 록 ON: 민트 조준선 · 손 떼면 스윙 · 쉬운 구 실루엣 ON: 민트 아우라·조금 큰 공</p></div><div class="panel-cta"><button type="button" class="primary" id="gesture-opts-done">확인 <span>→</span></button></div>`;
+ return `<div class="panel-body gesture-opts-body"><div class="gesture-opts-head"><span class="gesture-opts-icon" aria-hidden="true">☝</span><div><span class="eyebrow">GESTURE OPT</span><h1 class="gesture-opts-title">제스처 옵션</h1></div><button type="button" class="gesture-opts-close" id="gesture-opts-close" aria-label="닫기">×</button></div><div class="gesture-opt-list">${row('opt-hold-lock','홀드 록 (조준 고정)',hold)}${row('opt-ftue-guide','FTUE 손 가이드',ftue)}${row('opt-easy-sil','쉬운 구 실루엣',sil)}${row('opt-vfx-mood','분위기 효과',mood)}</div><p class="gesture-opts-hint">홀드 록 ON: 민트 조준선 · 손 떼면 스윙 · 쉬운 구 실루엣 ON: 민트 아우라·조금 큰 공 · 분위기 효과 OFF: 응원 FX만 끄기 (텔/임팩트/상태 유지)</p></div><div class="panel-cta"><button type="button" class="primary" id="gesture-opts-done">확인 <span>→</span></button></div>`;
 }
 function bindGestureOptToggles(){
- const hold=$('#opt-hold-lock'),ftue=$('#opt-ftue-guide'),sil=$('#opt-easy-sil');
+ const hold=$('#opt-hold-lock'),ftue=$('#opt-ftue-guide'),sil=$('#opt-easy-sil'),mood=$('#opt-vfx-mood');
  const sync=(btn,on)=>{btn.classList.toggle('is-on',on);btn.setAttribute('aria-checked',on?'true':'false');const t=btn.querySelector('.gesture-toggle-text');if(t)t.textContent=on?'ON':'OFF'};
  if(hold)hold.onclick=()=>{const n=!holdLockOn();setOptFlag(OPT_HOLD_LOCK,n);sync(hold,n)};
  if(ftue)ftue.onclick=()=>{const n=!ftueGuidePrefOn();setFtueGuidePref(n);sync(ftue,n)};
  if(sil)sil.onclick=()=>{const n=!easySilhouetteOn();setOptFlag(OPT_EASY_SIL,n);sync(sil,n)};
+ if(mood)mood.onclick=()=>{const n=!vfxMoodEnabled();setOptFlag(OPT_VFX_MOOD,n);if(!n)clearMoodLane();sync(mood,n)};
 }
 function closeGestureOptions(){
  const ret=gestureOptsReturn;gestureOptsReturn=null;
@@ -1877,7 +1883,7 @@ function draw(){
  }
  drawNearMissVignette();
 }
-function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(ftueFade>0)ftueFade=Math.max(0,ftueFade-dt);if(ghostBatFade>0)ghostBatFade=Math.max(0,ghostBatFade-dt/.28);if(ghostBatSpark>0)ghostBatSpark=Math.max(0,ghostBatSpark-dt);if(swingSmear)updateSwingSmear(dt);updateBatterSettle(dt);updateHeedongHitJuice(dt);updateHudEase(dt);if(hudEaseActive())hud();if(pointer&&fingerGuideClient){syncFingerGuideThumb();fingerGuideFade=1}else if(fingerGuideFade>0)fingerGuideFade=Math.max(0,fingerGuideFade-dt/.12);if(game.state==='playing'){updateBeatWarpQ(dt);if(ftueActive){ftuePlayTime+=dt;if(ftuePlayTime>=30)dismissFtue()}let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(typeof game.setAimBaitSense==='function')game.setAimBaitSense({held:!!pointer,holdLock:holdLockOn(),lockX:game.player.x});if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';if(vulnToastDelay>0){vulnToastDelay-=dt;if(vulnToastDelay<=0){vulnToastDelay=0;say('약점 노출! · PERFECT ×1.2','#FFE09A',1.1)}}if(phaseBannerTime>0){phaseBannerTime-=dt;if(phaseBannerTime<=0)hidePhaseBanner()}callTime-=dt;if(callTime<=0)$('#pitchcall').textContent='';pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);if(camPunchLife>0){camPunchLife=Math.max(0,camPunchLife-dt);if(camPunchLife<=0)camPunch=0}for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0);updateJuice(dt)}else {if(beatWarpQ.length)updateBeatWarpQ(dt);if(juiceFx.length||nearMissEdge>0)updateJuice(dt)}if(cheers.length)updateCheers(dt);draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
+function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(ftueFade>0)ftueFade=Math.max(0,ftueFade-dt);if(ghostBatFade>0)ghostBatFade=Math.max(0,ghostBatFade-dt/.28);if(ghostBatSpark>0)ghostBatSpark=Math.max(0,ghostBatSpark-dt);if(swingSmear)updateSwingSmear(dt);updateBatterSettle(dt);updateHeedongHitJuice(dt);updateHudEase(dt);if(hudEaseActive())hud();if(pointer&&fingerGuideClient){syncFingerGuideThumb();fingerGuideFade=1}else if(fingerGuideFade>0)fingerGuideFade=Math.max(0,fingerGuideFade-dt/.12);if(game.state==='playing'){updateBeatWarpQ(dt);if(ftueActive){ftuePlayTime+=dt;if(ftuePlayTime>=30)dismissFtue()}let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(typeof game.setAimBaitSense==='function')game.setAimBaitSense({held:!!pointer,holdLock:holdLockOn(),lockX:game.player.x});if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';if(vulnToastDelay>0){vulnToastDelay-=dt;if(vulnToastDelay<=0){vulnToastDelay=0;say('약점 노출! · PERFECT ×1.2','#FFE09A',1.1)}}if(phaseBannerTime>0){phaseBannerTime-=dt;if(phaseBannerTime<=0)hidePhaseBanner()}callTime-=dt;if(callTime<=0)$('#pitchcall').textContent='';pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);if(camPunchLife>0){camPunchLife=Math.max(0,camPunchLife-dt);if(camPunchLife<=0)camPunch=0}for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0);updateJuice(dt)}else {if(beatWarpQ.length)updateBeatWarpQ(dt);if(juiceFx.length||nearMissEdge>0)updateJuice(dt)}if(vfxMoodEnabled()){if(cheers.length)updateCheers(dt)}else if(cheers.length)clearMoodLane();draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'read_baseball_game',description:'Read the current baseball parry match state.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({state:game.state,health:game.hp,bossHealth:game.boss,perfects:game.perfects,combo:game.combo,seconds:Math.floor(game.time)})})).catch(()=>{})}catch{}}
 
 function loadAsset(img,url){return new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error(url));img.src=url})}
