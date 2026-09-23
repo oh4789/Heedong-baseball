@@ -9,17 +9,35 @@ const UPGRADE_DATA={
  survivor:{name:'끝까지 버티기',stat:'승부당 치명적인 피격 방어',levels:[{value:'1회 · 체력 1 유지',charges:1}]}
 };
 for(const data of Object.values(UPGRADE_DATA))data.levels.forEach((row,i)=>row.level=i+1);
+
+// Aim-lock bait fire (aimLockFire) — snapshot tx only; mid-flight homing = 0
+const AIM_BAIT_MIN_PITCH=5;
+const AIM_BAIT_HOLD_LOCK_SEC=1.2;
+const AIM_BAIT_HOLD_RAW_SEC=1.8;
+const AIM_BAIT_STILL_PX=18;
+const AIM_BAIT_MAX_PER_STAGE=2;
+const AIM_BAIT_MIN_GAP_PITCHES=3;
+const AIM_BAIT_COOLDOWN_SEC=6.0;
+const AIM_BAIT_WINDUP=0.95;
+const AIM_BAIT_WINDUP_FURY=0.75;
+const AIM_BAIT_JITTER=0;
+const AIM_BAIT_HOMING=0;
+const AIM_BAIT_CHANCE_HP100_70=0.28;
+const AIM_BAIT_CHANCE_HP70_50=0.38;
+const AIM_BAIT_CHANCE_HP50_25=0.48;
+const AIM_BAIT_CHANCE_HP25_0=0.55;
 class BaseballGame {
  constructor(random=Math.random){this.random=random;this.meta={};this.reset();this.state='ready'}
- reset(){this.state='playing';this.player={x:240,y:650};this.hp=3;this.stage=this.stage||1;this.bossMax=135+35*(this.stage-1);this.boss=this.bossMax;this.balls=[];this.returns=[];this.time=0;this.cooldown=0;this.swingAnim=0;this.inv=0;this.combo=0;this.bestCombo=0;this.perfects=0;this.hits=0;this.misses=0;this.dodges=0;this.pitchCount=0;this.nextPitch=1.6;this.windup=null;this.events=[];this.fury=false;this.rallyReady=false;this.rallyCount=0;this.lastPitchReaction='';this.offers=null;this.comboGuards=this.upgradeValue('tenacity','charges',0);this.lastStands=this.upgradeValue('survivor','charges',0);this.vulnerable=0;this.stallTime=0;this.lastTrackerAt=-999;this.fakeFireCount=0;this.lastFakeFireAt=-999;this.curvePairUsed=false;this.curvePairPending=null;this.aaUsed=false;this.aaDeferred=false;this.aaForceType=null;this.recentTypes=[];this.softHeatPitchCount=0;this.softHeatFireCount=0}
+ reset(){this.state='playing';this.player={x:240,y:650};this.hp=3;this.stage=this.stage||1;this.bossMax=135+35*(this.stage-1);this.boss=this.bossMax;this.balls=[];this.returns=[];this.time=0;this.cooldown=0;this.swingAnim=0;this.inv=0;this.combo=0;this.bestCombo=0;this.perfects=0;this.hits=0;this.misses=0;this.dodges=0;this.pitchCount=0;this.nextPitch=1.6;this.windup=null;this.events=[];this.fury=false;this.rallyReady=false;this.rallyCount=0;this.lastPitchReaction='';this.offers=null;this.comboGuards=this.upgradeValue('tenacity','charges',0);this.lastStands=this.upgradeValue('survivor','charges',0);this.vulnerable=0;this.stallTime=0;this.lastTrackerAt=-999;this.fakeFireCount=0;this.lastFakeFireAt=-999;this.curvePairUsed=false;this.curvePairPending=null;this.aaUsed=false;this.aaDeferred=false;this.aaForceType=null;this.recentTypes=[];this.softHeatPitchCount=0;this.softHeatFireCount=0;this.aimBaitCount=0;this.lastAimBaitPitch=-999;this.lastAimBaitAt=-999;this.aimBaitSense={held:false,holdLock:false,lockX:240};this.aimBaitHoldTime=0;this.aimBaitAnchorX=240}
  emit(type,data={}){this.events.push({type,...data})}
  get zone(){return {x:this.player.x,y:this.player.y-42}}
  move(dx,dy,dt){const l=Math.hypot(dx,dy);if(!l)return;this.player.x=Math.max(80,Math.min(420,this.player.x+dx/l*245*dt));this.player.y=Math.max(565,Math.min(670,this.player.y+dy/l*245*dt))}
  // Soft Heat — pacing only, no damage/judgment change.
+ // aimLockFire: spatial hold-lock bait; Soft Heat tracker wins same prepare (defer aim-bait).
  prepare(){
  this.pitchCount++;const n=this.pitchCount;
  const pool=this.stage>=2?['double','changeFast','slider','fireTwin','twin','fast','slow']:['double','changeFast','slider','fast','slow','fire'];
- const early=n<=4;let pattern,type,aimSpan=early?120:40,fakeFire=false,curve=null,txOverride=null;
+ const early=n<=4;let pattern,type,aimSpan=early?120:40,fakeFire=false,curve=null,txOverride=null,aimLockFire=false;
  if(early){pattern=['fast','slow','fast','fire'][n-1]}
  else{
   const inFlight=this.balls.some(b=>!b.resolved);
@@ -32,6 +50,12 @@ class BaseballGame {
    pattern='slider';curve=p.curve;txOverride=Math.max(85,Math.min(395,this.player.x+p.txOff));
   }else if(!this.aaUsed&&(this.aaDeferred||this.shouldForceAA())){
    pattern=this.aaForceType||this.aaType();this.aaUsed=true;this.aaDeferred=false;this.aaForceType=null;
+  }else if(this.aimBaitEligible()&&this.random()<this.aimBaitChance()&&this.fireCapAllowsPromote()){
+   // After AA fails, before soft-heat pool / fakeFire. fakeFire must not overwrite aimLockFire.
+   pattern='aimLockFire';type='fire';aimLockFire=true;fakeFire=false;curve=null;
+   const lockX=(this.aimBaitSense&&this.aimBaitSense.lockX!=null)?this.aimBaitSense.lockX:this.player.x;
+   txOverride=Math.max(85,Math.min(395,lockX+(this.random()-.5)*AIM_BAIT_JITTER*2));
+   this.aimBaitCount++;this.lastAimBaitPitch=n;this.lastAimBaitAt=this.time;
   }else{
    pattern=this.pickSoftHeatPattern(pool,n);
    if(pattern==='slider'&&!this.curvePairUsed&&n>=7){
@@ -43,17 +67,25 @@ class BaseballGame {
    }
   }
  }
- type={double:'fast',changeFast:'slow',fireTwin:'fire',twin:'fast',fakeFire:'fire'}[pattern]||pattern;
+ type={double:'fast',changeFast:'slow',fireTwin:'fire',twin:'fast',fakeFire:'fire',aimLockFire:'fire'}[pattern]||pattern;
  const displayType=fakeFire?'fast':type;
- const windupT=early?(type==='fire'?1.25:1.05):(this.fury?.65:.8);
+ let windupT;
+ if(early)windupT=type==='fire'?1.25:1.05;
+ else if(aimLockFire||pattern==='aimLockFire')windupT=this.fury?AIM_BAIT_WINDUP_FURY:AIM_BAIT_WINDUP;
+ else windupT=this.fury?.65:.8;
  const tx=txOverride!=null?txOverride:Math.max(85,Math.min(395,this.player.x+(this.random()-.5)*aimSpan));
- this.windup={pattern,type:displayType,throwType:type,t:windupT,duration:windupT,early,tx,fakeFire,revealAt:fakeFire?windupT*.3:0,revealed:false,curve};
+ this.windup={pattern,type:displayType,throwType:type,t:windupT,duration:windupT,early,tx,fakeFire,revealAt:fakeFire?windupT*.3:0,revealed:false,curve,aimLockFire:!!(aimLockFire||pattern==='aimLockFire')};
  if(fakeFire){this.fakeFireCount++;this.lastFakeFireAt=n}
- this.emit('windup',{pitch:displayType,pattern,fakeFire});
+ this.emit('windup',{pitch:displayType,pattern,fakeFire,aimLockFire:!!(aimLockFire||pattern==='aimLockFire')});
  }
  shouldForceAA(){const r=this.recentTypes;if(r.length<3)return false;const a=r[r.length-3],b=r[r.length-2],c=r[r.length-1];return a===c&&a!==b&&(a==='fast'||a==='slow')&&(b==='fast'||b==='slow')}
  aaType(){return this.recentTypes[this.recentTypes.length-1]}
  fireCapAllowsPromote(){const cap=this.stage>=2?.4:.35,total=this.softHeatPitchCount,fires=this.softHeatFireCount;return total<=0||(fires+1)/(total+1)<=cap}
+
+ _tickAimBaitHold(dt){const s=this.aimBaitSense||(this.aimBaitSense={held:false,holdLock:false,lockX:this.player.x});if(!s.held||Math.abs(this.player.x-this.aimBaitAnchorX)>AIM_BAIT_STILL_PX){this.aimBaitAnchorX=this.player.x;this.aimBaitHoldTime=0}else this.aimBaitHoldTime+=dt;if(s.held)s.lockX=this.player.x}
+ setAimBaitSense({held=false,holdLock=false,lockX=240}={}){this.aimBaitSense={held:!!held,holdLock:!!holdLock,lockX:lockX==null?this.player.x:lockX}}
+ aimBaitChance(){const hpPct=this.boss/this.bossMax;if(hpPct>0.70)return AIM_BAIT_CHANCE_HP100_70;if(hpPct>0.50)return AIM_BAIT_CHANCE_HP70_50;if(hpPct>0.25)return AIM_BAIT_CHANCE_HP50_25;return AIM_BAIT_CHANCE_HP25_0}
+ aimBaitEligible(){const n=this.pitchCount,s=this.aimBaitSense||{held:false,holdLock:false};if(n<AIM_BAIT_MIN_PITCH)return false;if(this.balls.some(b=>!b.resolved))return false;if(this.aimBaitCount>=AIM_BAIT_MAX_PER_STAGE)return false;if((n-this.lastAimBaitPitch)<AIM_BAIT_MIN_GAP_PITCHES)return false;if((this.time-this.lastAimBaitAt)<AIM_BAIT_COOLDOWN_SEC)return false;const need=s.holdLock?AIM_BAIT_HOLD_LOCK_SEC:AIM_BAIT_HOLD_RAW_SEC;return !!(s.held&&this.aimBaitHoldTime>=need)}
  softHeatBands(){const hpPct=this.boss/this.bossMax;if(hpPct>0.70)return{hpMult:1,fireW:1,fireTwinW:1};if(hpPct>0.50)return{hpMult:.92,fireW:1.25,fireTwinW:1.2};if(hpPct>0.25)return{hpMult:.85,fireW:1.5,fireTwinW:1.4};return{hpMult:.78,fireW:1.75,fireTwinW:1.6}}
  softHeatGap(){const baseGap=this.fury?.2:.5,stallMult=Math.max(.65,Math.pow(.85,Math.floor(this.stallTime/2.5))),{hpMult}=this.softHeatBands();return Math.min(.55,Math.max(.18,baseGap*stallMult*hpMult))}
  pickSoftHeatPattern(pool,n=this.pitchCount){
@@ -97,7 +129,7 @@ class BaseballGame {
 getWideReach(){const l=Math.min(UPGRADE_DATA.wideBat.levels.length,this.meta.wideBat||0);return 53*(l?UPGRADE_DATA.wideBat.levels[l-1].reach:1)}
 getPerfectDamage(){const l=Math.min(UPGRADE_DATA.slugger.levels.length,this.meta.slugger||0);return l?UPGRADE_DATA.slugger.levels[l-1].damage:20}
 swing(){if(this.state!=='playing'||this.cooldown>0)return false;this.stallTime=0;this.cooldown=this.getSwingCooldown();this.swingAnim=.21;const z=this.zone;const reach=this.getWideReach();const candidates=this.balls.filter(b=>!b.resolved&&b.t>=0&&b.type!=='fire'&&((b.x-z.x)/reach)**2+((b.y-z.y)/48)**2<=1).sort((a,b)=>Math.abs(a.y-z.y)-Math.abs(b.y-z.y));const ball=candidates[0];if(ball){ball.resolved=true;const perfectZone=this.getPerfectZone();const perfect=((ball.x-z.x)/perfectZone.x)**2+((ball.y-z.y)/perfectZone.y)**2<=1;this.hits++;this.combo++;this.bestCombo=Math.max(this.bestCombo,this.combo);if(perfect)this.perfects++;let rally=false;let damage=perfect?(this.meta.slugger?this.getPerfectDamage():20):10;if(perfect&&this.vulnerable>0)damage*=1.2;if(this.combo>=3&&!this.rallyReady){this.rallyCount++;this.rallyReady=true;rally=true;damage+=this.upgradeValue('homer','bonus',25);this.emit('rally',{count:this.combo,damage});this.combo=0;}this.returns.push({x:ball.x,y:ball.y,sx:ball.x,sy:ball.y,t:0,damage,perfect,rally});this.emit(perfect?'perfect':'hit',{x:ball.x,y:ball.y,combo:this.combo})}else{const guarded=this.combo>0&&this.comboGuards>0;if(guarded)this.comboGuards--;else this.combo=0;this.misses++;this.emit('whiff');this.emit('reaction',{line:guarded?'콤보 보호! · 남은 '+this.comboGuards+'회':'벌써 휘둘렀어?'})}return true}
- update(dt,dx=0,dy=0){if(this.state!=='playing')return;this.time+=dt;this.stallTime+=dt;this.cooldown=Math.max(0,this.cooldown-dt);this.swingAnim=Math.max(0,this.swingAnim-dt);this.inv=Math.max(0,this.inv-dt);this.vulnerable=Math.max(0,this.vulnerable-dt);this.move(dx,dy,dt);if(this.windup){this.windup.t-=dt;if(this.windup.fakeFire&&!this.windup.revealed&&this.windup.t<=this.windup.revealAt){this.windup.revealed=true;this.windup.type='fire';this.emit('fakeFireReveal',{pitch:'fire'})}if(this.windup.t<=0)this.throwBall()}else{this.nextPitch-=dt;if(this.nextPitch<=0)this.prepare()}
+ update(dt,dx=0,dy=0){if(this.state!=='playing')return;this.time+=dt;this.stallTime+=dt;this.cooldown=Math.max(0,this.cooldown-dt);this.swingAnim=Math.max(0,this.swingAnim-dt);this.inv=Math.max(0,this.inv-dt);this.vulnerable=Math.max(0,this.vulnerable-dt);this.move(dx,dy,dt);this._tickAimBaitHold(dt);if(this.windup){this.windup.t-=dt;if(this.windup.fakeFire&&!this.windup.revealed&&this.windup.t<=this.windup.revealAt){this.windup.revealed=true;this.windup.type='fire';this.emit('fakeFireReveal',{pitch:'fire'})}if(this.windup.t<=0)this.throwBall()}else{this.nextPitch-=dt;if(this.nextPitch<=0)this.prepare()}
  for(const b of this.balls){if(b.resolved)continue;b.t+=dt;if(b.t<0)continue;if(b.announced===false){b.announced=true;this.emit(b.twin?'twin':'pitch',{pitch:b.type})}const q=b.t/b.duration,sx=b.sx??240,sy=b.sy??290;b.x=sx+(b.tx-sx)*q+(b.curve||0)*Math.sin(Math.PI*Math.min(1,q));b.y=sy+(650-sy)*q;if(Math.hypot(b.x-this.player.x,b.y-this.player.y)<21){b.resolved=true;this.combo=0;this.emit('reaction',{line:'이번 공은 내 거야.'});if(this.inv<=0){this.inv=1.4;if(this.hp===1&&this.lastStands>0){this.lastStands--;this.emit('lastStand')}else{this.hp--;this.emit('damage',{x:this.player.x,y:this.player.y})}if(this.hp<=0){this.state='lost';this.emit('end');break}}}else if(b.y>785){b.resolved=true;if(b.type==='fire'){this.dodges++;this.vulnerable=2;this.emit('vulnerable',{t:2})}else this.combo=0}}
  this.balls=this.balls.filter(b=>!b.resolved);if(this.state!=='playing')return;for(const r of this.returns){r.t+=dt;const q=Math.min(1,r.t/.38);r.x=r.sx+(240-r.sx)*q;r.y=r.sy+(290-r.sy)*q;if(q>=1){this.boss=Math.max(0,this.boss-r.damage);this.emit('impact',{damage:r.damage,perfect:r.perfect});if(this.vulnerable>0)this.vulnerable=0;if(r.rally)this.rallyReady=false;r.done=true;if(this.boss<=0){this.state='won';this.emit('end');break}}}this.returns=this.returns.filter(r=>!r.done);if(this.boss<=this.bossMax*.5&&!this.fury&&this.state==='playing'){this.fury=true;this.emit('fury');this.emit('reaction',{line:'이제 진짜 던진다!'})}}
 newRun(){this.meta={};this.stage=1;this.reset()}
