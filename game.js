@@ -1059,7 +1059,7 @@ function hideFirstFireIntroToast(){
  if(firstFireIntroToastTimer){clearTimeout(firstFireIntroToastTimer);firstFireIntroToastTimer=0}
  const el=$('#first-fire-intro-toast');
  if(!el)return;
- el.classList.remove('show','pop','hold','fade');
+ el.classList.remove('show','pop','hold','fade','fade-rm');
  el.hidden=true;
 }
 function showFirstFireIntroToast(){
@@ -1076,17 +1076,18 @@ function showFirstFireIntroToast(){
  }
  el.innerHTML='<div class="first-fire-intro-toast-card"><span class="first-fire-intro-toast-badge" aria-hidden="true">🔥</span><div class="first-fire-intro-toast-l1">불꽃 마구 등장!</div><div class="first-fire-intro-toast-l2"><span class="first-fire-intro-toast-chev" aria-hidden="true">«</span><span>손가락을 옆으로 밀어 회피</span><span class="first-fire-intro-toast-chev" aria-hidden="true">»</span></div><div class="first-fire-intro-toast-rule" aria-hidden="true"></div><div class="first-fire-intro-toast-l3">이번만 안내</div></div>';
  el.hidden=false;
- el.classList.remove('show','pop','hold','fade');
+ el.classList.remove('show','pop','hold','fade','fade-rm');
  void el.offsetWidth;
  el.classList.add('show','pop');
+ // Motion sheet: POP 150ms → HOLD 1.4s → FADE 200ms (RM: snap pop, opacity-only fade 120ms)
  const reduced=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}})();
- const popMs=reduced?0:150, holdMs=1400, fadeMs=reduced?0:200;
+ const popMs=reduced?0:150, holdMs=1400, fadeMs=reduced?120:200;
  firstFireIntroToastTimer=setTimeout(()=>{
   el.classList.add('hold');
   firstFireIntroToastTimer=setTimeout(()=>{
    el.classList.remove('pop','hold');
-   el.classList.add('fade');
-   firstFireIntroToastTimer=setTimeout(()=>{el.hidden=true;el.classList.remove('show','fade');firstFireIntroToastTimer=0},fadeMs);
+   el.classList.add(reduced?'fade-rm':'fade');
+   firstFireIntroToastTimer=setTimeout(()=>{el.hidden=true;el.classList.remove('show','fade','fade-rm');firstFireIntroToastTimer=0},fadeMs);
   },holdMs);
  },popMs);
 }
