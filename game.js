@@ -1463,7 +1463,101 @@ function drawBallDepthShadow(b,r,fire){
  }
  ctx.restore();
 }
-function ball(x,y,r,color,fire=false){ctx.save();ctx.translate(x,y);if(fire){ctx.fillStyle='#f8773766';ctx.beginPath();ctx.moveTo(-r,0);ctx.lineTo(-r*.6,-r*3.2);ctx.lineTo(0,-r*1.6);ctx.lineTo(r*.6,-r*3.8);ctx.lineTo(r,0);ctx.fill()}ctx.shadowColor=color;ctx.shadowBlur=fire?15:7;ctx.fillStyle=color;ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle=fire?'#6d260d':'#ba5a51';ctx.lineWidth=1.7;ctx.beginPath();ctx.arc(-r*.8,0,r*.7,-1.1,1.1);ctx.stroke();ctx.beginPath();ctx.arc(r*.8,0,r*.7,2.05,4.25);ctx.stroke();ctx.restore()}
+// Ball seam·spin pitch tell v1 (visual only) — orthogonal to tipping / VO / shape lang / depth shadow
+// Low-end default: canvas bands (no shader). Fire pattern = thick 2-seam (not knuckle dots).
+const SEAM_TELL_PEAK_START_MS=80;
+const SEAM_TELL_PEAK_END_MS=200;
+const SEAM_CONTRAST_PEAK=1.35;
+const SEAM_CONTRAST_BASE=1.00;
+const FIRE_SPIN_MULT=1.15;
+function seamContrastMul(tSec){
+ // Boost seam luminance ONLY in 80–200ms post-release. RM: boost OFF (shape tell remains).
+ if(!(tSec>=0))return SEAM_CONTRAST_BASE;
+ if(reduceMotion())return SEAM_CONTRAST_BASE;
+ const ms=tSec*1000;
+ if(ms>=SEAM_TELL_PEAK_START_MS&&ms<=SEAM_TELL_PEAK_END_MS)return SEAM_CONTRAST_PEAK;
+ return SEAM_CONTRAST_BASE;
+}
+function drawBallSeamTell(r,fire,tSec){
+ // Clipped vertical bands · luminance+shape encode · ban #FF3B3B · spin visual-only
+ const contrast=seamContrastMul(tSec);
+ const rm=reduceMotion();
+ const spinMult=fire?FIRE_SPIN_MULT:1;
+ const ang=rm?0:visualTime*6.2*spinMult;
+ ctx.save();
+ ctx.beginPath();ctx.arc(0,0,r*.98,0,7);ctx.clip();
+ ctx.rotate(ang);
+ const halfH=r*.92;
+ if(fire){
+  // Thick 2-seam coral/amber (#FFAB88 / #FF986E / #FF5A2A)
+  const cols=['#FFAB88','#FF986E','#FF5A2A'];
+  const lw=Math.max(4.5,Math.min(7.2,r*.48));
+  const xs=[-r*.28,r*.28];
+  for(let i=0;i<xs.length;i++){
+   const x=xs[i];
+   ctx.strokeStyle=cols[i%cols.length];
+   ctx.globalAlpha=Math.min(1,.42+(.28*(contrast-1)/.35));
+   ctx.lineWidth=lw;ctx.lineCap='round';
+   ctx.beginPath();
+   ctx.moveTo(x,-halfH);
+   for(let s=1;s<=6;s++){
+    const t=s/6,yy=-halfH+halfH*2*t;
+    const wob=Math.sin(t*Math.PI*2.2+(rm?0:visualTime*4.5*spinMult)+i)*r*.045;
+    ctx.lineTo(x+wob,yy);
+   }
+   ctx.stroke();
+   // brighter core for ΔL* peak
+   ctx.strokeStyle=cols[0];
+   ctx.globalAlpha=Math.min(1,.22*contrast);
+   ctx.lineWidth=lw*.45;
+   ctx.beginPath();
+   ctx.moveTo(x,-halfH);
+   for(let s=1;s<=6;s++){
+    const t=s/6,yy=-halfH+halfH*2*t;
+    const wob=Math.sin(t*Math.PI*2.2+(rm?0:visualTime*4.5*spinMult)+i)*r*.045;
+    ctx.lineTo(x+wob,yy);
+   }
+   ctx.stroke();
+  }
+ }else{
+  // Thin 4-seam cream bands on ball face
+  const cream='#F7F3E8';
+  const navy='#081329';
+  const lw=Math.max(1.6,Math.min(3.1,r*.2));
+  const xs=[-r*.42,-r*.14,r*.14,r*.42];
+  for(let i=0;i<xs.length;i++){
+   const x=xs[i];
+   const wobFn=(s)=>{const t=s/6,yy=-halfH+halfH*2*t;const wob=Math.sin(t*Math.PI*2+(rm?0:visualTime*3.8)+i*.7)*r*.03;return[x+wob,yy]};
+   // soft navy edge underlay for mid ΔL* (~25–35)
+   ctx.strokeStyle=navy;
+   ctx.globalAlpha=Math.min(1,.14*contrast);
+   ctx.lineWidth=lw*1.45;ctx.lineCap='round';
+   ctx.beginPath();ctx.moveTo(x,-halfH);
+   for(let s=1;s<=6;s++){const[px,py]=wobFn(s);ctx.lineTo(px,py)}
+   ctx.stroke();
+   ctx.strokeStyle=cream;
+   ctx.globalAlpha=Math.min(1,.40+(.26*(contrast-1)/.35));
+   ctx.lineWidth=lw;
+   ctx.beginPath();ctx.moveTo(x,-halfH);
+   for(let s=1;s<=6;s++){const[px,py]=wobFn(s);ctx.lineTo(px,py)}
+   ctx.stroke();
+  }
+ }
+ ctx.restore();
+}
+function ball(x,y,r,color,fire=false,opts){
+ // opts.seamTell + opts.tSec → flight pitch tell (visual only; hitbox/speed untouched)
+ ctx.save();ctx.translate(x,y);
+ if(fire){ctx.fillStyle='#f8773766';ctx.beginPath();ctx.moveTo(-r,0);ctx.lineTo(-r*.6,-r*3.2);ctx.lineTo(0,-r*1.6);ctx.lineTo(r*.6,-r*3.8);ctx.lineTo(r,0);ctx.fill()}
+ ctx.shadowColor=color;ctx.shadowBlur=fire?15:7;ctx.fillStyle=color;ctx.beginPath();ctx.arc(0,0,r,0,7);ctx.fill();ctx.shadowBlur=0;
+ const tSec=opts&&typeof opts.tSec==='number'?opts.tSec:null;
+ if(opts&&opts.seamTell&&tSec!=null&&tSec>=0){
+  drawBallSeamTell(r,!!fire,tSec);
+ }else{
+  ctx.strokeStyle=fire?'#6d260d':'#ba5a51';ctx.lineWidth=1.7;ctx.beginPath();ctx.arc(-r*.8,0,r*.7,-1.1,1.1);ctx.stroke();ctx.beginPath();ctx.arc(r*.8,0,r*.7,2.05,4.25);ctx.stroke();
+ }
+ ctx.restore();
+}
 function currentPitchPose(){
  if(game.windup){
   const dur=game.windup.duration||game.windup.t||1;
@@ -1864,7 +1958,7 @@ function draw(){
  }
  if(fire){for(let j=0;j<5;j++){const h=20+j*11;ctx.fillStyle=j%2?'#FFD25B99':'#FF5A2A88';ctx.beginPath();ctx.arc(b.x+Math.sin(visualTime*21+j)*j*1.4,b.y-h,Math.max(1,7-j),0,7);ctx.fill()}}
  drawBallDepthShadow(b,r,fire);
- ball(b.x,b.y,r,color,fire);
+ ball(b.x,b.y,r,color,fire,{seamTell:true,tSec:b.t});
  if(fire&&b.y>420){
   // Flight evasion stage: #FF5A2A dashed landing oval + ! badge (design v1)
   ctx.strokeStyle='#FF5A2A';ctx.shadowColor='#FF5A2A';ctx.shadowBlur=12;ctx.globalAlpha=.75+Math.sin(visualTime*16)*.15;
