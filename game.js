@@ -2,6 +2,9 @@
 const $=s=>document.querySelector(s),canvas=$('#field'),ctx=canvas.getContext('2d'),game=new BaseballGame(),bg=new Image(),pitcher=new Image(),batter=new Image();const pitchPoses={idle:new Image(),windup:new Image(),arm_swing:new Image(),release:new Image(),follow:new Image()};let pitchPosesReady=false;const batterPoses={ready:new Image(),load:new Image(),swing:new Image(),contact:new Image(),follow:new Image()};let batterPosesReady=0;const W=480,H=850;let previous=0,visualTime=0,pointer=null,aim={x:0,y:0},keys={},effects=[],cheers=[],freeze=0,shake=0,feedbackTime=0,callTime=0,flash=0,flashTone='gold',muted=false,audio=null,pitchPoseTime=0,bossImpact=0,assetsReady=false;
 let fireCoachShown=false;let perfectStreak=0;let defeatRetryAt=0;
 let juiceFx=[],nearMissEdge=0,vulnToastDelay=0;
+// Near-miss / fire-dodge Doppler whizz (audio juice only — judgment untouched)
+const whizzTrack=new WeakMap(); // ball -> {prev,min,fired}
+let whizzBusyUntil=0;
 let camPunch=0,camPunchLife=0;const CAM_PUNCH_LIFE=2/60;
 const reduceMotion=()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch{return false}};
 // VFX 4-lane readability v1 — clash clamps only (A: fire tel↔Perfect impact; B: hit flash↔first-fire toast)
@@ -114,6 +117,73 @@ function sound(kind,ev){if(muted||!audio)return;try{const t=audio.currentTime,pi
  else if(kind==='fury'){tone('square',110,.16,.03,75)}
 }catch{}}
 function activateAudio(){try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume()}catch{}}
+// TOP2 near-miss/dodge Doppler whizz — flight/pass only (orthogonal to fire windup VO)
+const WHIZZ_VOL_CAP=0.048,WHIZZ_NEAR_MAX=150,WHIZZ_GATE=0.09;
+function whizzSfxEnabled(){return !muted&&!!audio&&!reduceMotion()}
+function playDopplerWhizz(tier='fire',dist=40){
+ // tier 'fire' = dodge success (strong 80–150ms); 'near' = Miss near-miss (weaker)
+ if(!whizzSfxEnabled())return;
+ try{
+  const strong=tier==='fire';
+  const dur=strong?0.12:0.085; // fire ~120ms within 80–150; near weaker/shorter
+  const prox=1-Math.min(1,Math.max(0,(dist-18)/WHIZZ_NEAR_MAX));
+  const gain=Math.min(WHIZZ_VOL_CAP,(strong?0.036:0.016)*(0.55+0.45*prox));
+  const t0=audio.currentTime;
+  const sr=audio.sampleRate|0;
+  const n=Math.max(1,(sr*dur)|0);
+  const buf=audio.createBuffer(1,n,sr);
+  const data=buf.getChannelData(0);
+  for(let i=0;i<n;i++){const env=1-i/n;data[i]=(Math.random()*2-1)*env*env}
+  const srcNode=audio.createBufferSource();srcNode.buffer=buf;
+  const bp=audio.createBiquadFilter();bp.type='bandpass';bp.Q.value=strong?2.4:1.5;
+  const fHi=strong?2200:1500,fLo=strong?380:520; // approach↑ → pass↓
+  bp.frequency.setValueAtTime(fHi,t0);
+  bp.frequency.exponentialRampToValueAtTime(Math.max(80,fLo),t0+dur);
+  const g=audio.createGain();
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(gain,t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+  srcNode.connect(bp).connect(g).connect(audio.destination);
+  srcNode.start(t0);srcNode.stop(t0+dur+0.02);
+  // thin sine chirp (Doppler cue) — quieter than noise body
+  const o=audio.createOscillator(),og=audio.createGain();
+  o.type='sine';
+  o.frequency.setValueAtTime(strong?980:720,t0);
+  o.frequency.exponentialRampToValueAtTime(strong?220:280,t0+dur);
+  og.gain.setValueAtTime(0,t0);
+  og.gain.linearRampToValueAtTime(gain*0.35,t0+0.01);
+  og.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+  o.connect(og).connect(audio.destination);
+  o.start(t0);o.stop(t0+dur+0.02);
+ }catch{}
+}
+function updateFireDodgeWhizz(){
+ // Closest-approach frame for in-flight fireballs only — not windup VO, not damage hits
+ if(!whizzSfxEnabled()||game.state!=='playing')return;
+ const z=game.zone,now=performance.now()/1000;
+ let best=null; // nearest just-passed candidate
+ const active=[]; // unfired fireballs this frame (for nearest-only)
+ for(const b of game.balls){
+  if(!b||b.resolved||b.t<0||b.type!=='fire')continue;
+  const d=Math.hypot(b.x-z.x,b.y-z.y);
+  let st=whizzTrack.get(b);
+  if(!st){whizzTrack.set(b,{prev:d,min:d,fired:false});continue}
+  if(d<st.min)st.min=d;
+  // passed closest: distance rising after approach, past bat plane, within near band
+  if(!st.fired&&st.prev!=null&&d>st.prev&&b.y>=z.y-24&&st.min<=WHIZZ_NEAR_MAX){
+   if(!best||st.min<best.min)best={st,min:st.min,b};
+  }
+  if(!st.fired)active.push({st,min:st.min,b});
+  st.prev=d;
+ }
+ if(!best||now<whizzBusyUntil)return;
+ // multi-ball: only nearest — wait if a closer unfired sibling still exists
+ for(const a of active){if(a.b!==best.b&&a.min<best.min)return}
+ best.st.fired=true;
+ for(const a of active)a.st.fired=true; // one-shot wave + vol cap via single play
+ playDopplerWhizz('fire',best.min);
+ whizzBusyUntil=now+WHIZZ_GATE;
+}
 function clearInput(){
  if(pointer&&fingerGuideClient)syncFingerGuideThumb();
  pointer=null;aim={x:0,y:0};keys={};fingerGuideClient=null;
@@ -779,7 +849,7 @@ function drawAboveFingerGuide(){
  drawGuideChip(bandX-56,bandY-16,'접점',mint,a);
  drawGuideChip(bandX+58,bandY-10,'궤도',gold,a);
 }
-function start(mode='new'){if(!assetsReady)return;document.activeElement?.blur();activateAudio();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();clearInput();matchRecordStart={...records.data};if(mode!=='continue')fireCoachShown=false;perfectStreak=0;enableFtueIfNeeded(mode);if(mode==='continue')game.continueRun();else game.newRun();records.update(game.stage,game.perfects);effects=[];cheers=[];juiceFx=[];beatWarpQ=[];nearMissEdge=0;vulnToastDelay=0;fingerGuideFade=0;fingerGuideClient=null;swingSmear=null;clearPitchSettleFidget();freeze=shake=flash=pitchPoseTime=bossImpact=0;flashTone='gold';camPunch=0;camPunchLife=0;phaseChunkLast=3;hidePhaseBanner();hideFirstFireIntroToast();$('#overlay').classList.add('hidden');say('공이 원에 오면 손을 떼세요','#e1f7d3',2.8);$('#pitchcall').textContent='';$('#pitchcall').classList.remove('aim-bait');previous=performance.now();hud()}
+function start(mode='new'){if(!assetsReady)return;document.activeElement?.blur();activateAudio();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();clearInput();matchRecordStart={...records.data};if(mode!=='continue')fireCoachShown=false;perfectStreak=0;enableFtueIfNeeded(mode);if(mode==='continue')game.continueRun();else game.newRun();records.update(game.stage,game.perfects);effects=[];cheers=[];juiceFx=[];beatWarpQ=[];nearMissEdge=0;vulnToastDelay=0;whizzBusyUntil=0;fingerGuideFade=0;fingerGuideClient=null;swingSmear=null;clearPitchSettleFidget();freeze=shake=flash=pitchPoseTime=bossImpact=0;flashTone='gold';camPunch=0;camPunchLife=0;phaseChunkLast=3;hidePhaseBanner();hideFirstFireIntroToast();$('#overlay').classList.add('hidden');say('공이 원에 오면 손을 떼세요','#e1f7d3',2.8);$('#pitchcall').textContent='';$('#pitchcall').classList.remove('aim-bait');previous=performance.now();hud()}
 function say(t,c='#ffdda0',duration=.85){$('#feedback').textContent=t;$('#feedback').style.color=c;$('#feedback').style.fontSize=t.length>14?'18px':'30px';feedbackTime=duration}
 function burst(x,y,color,n=15){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=45+Math.random()*180;effects.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:.3+Math.random()*.3,color})}}
 // Director juice helpers (VFX only — judgment/hitboxes untouched)
@@ -1404,7 +1474,7 @@ function swingWithTouchLatency(e){const stamp=typeof e?.timeStamp==='number'?e.t
 canvas.addEventListener('pointerdown',e=>{if(game.state!=='playing'||pointer)return;e.preventDefault();activateAudio();canvas.setPointerCapture(e.pointerId);pointer={id:e.pointerId,x:e.clientX,y:e.clientY};aim={x:0,y:0};fingerGuideClient={x:e.clientX,y:e.clientY};syncFingerGuideThumb();fingerGuideFade=1});canvas.addEventListener('pointermove',e=>{if(!pointer||e.pointerId!==pointer.id)return;const sx=W/canvas.clientWidth,sy=H/canvas.clientHeight;aim={x:(e.clientX-pointer.x)*sx,y:(e.clientY-pointer.y)*sy};const l=Math.hypot(aim.x,aim.y);if(l>48){pointer.x=e.clientX-aim.x/l*48/sx;pointer.y=e.clientY-aim.y/l*48/sy}fingerGuideClient={x:e.clientX,y:e.clientY};syncFingerGuideThumb();fingerGuideFade=1});canvas.addEventListener('pointerup',e=>{if(!pointer||e.pointerId!==pointer.id)return;const armed=holdLockOn();clearInput();swingWithTouchLatency(e);if(armed&&game.swingAnim>0){ghostBatFade=1;ghostBatSpark=.32}processEvents()});function cancel(e){if(pointer?.id===e.pointerId)clearInput()}canvas.addEventListener('pointercancel',cancel);canvas.addEventListener('lostpointercapture',cancel);
 addEventListener('keydown',e=>{if(!$('#cinematic').classList.contains('hidden')||e.target?.closest?.('input,textarea,dialog,button'))return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();keys[e.key.toLowerCase()]=true;if(e.code==='Space'&&!e.repeat){if(tryDefeatRetry('space'))return;activateAudio();game.swing();processEvents()}if(e.key==='Escape'&&!e.repeat)pause()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);addEventListener('blur',()=>{if(game.state==='playing')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&game.state==='playing')pause()});
 function processEvents(){for(const e of game.events.splice(0)){// Beatwarp: Perfect/Good impact SFX deferred — judgment/bat remain immediate
- if(e.type!=='perfect'&&e.type!=='hit')sound(e.type,e);if(e.type==='perfect'){dismissFtue();perfectStreak++;records.update(game.stage,game.perfects);beginSwingSmear('perfect');beginBatterSettle('swing');const hx=e.x??game.zone.x,hy=e.y??game.zone.y;spawnFriendCheer(hx,hy,{power:1});queueBeatWarpImpact('perfect',hx,hy);triggerCamPunch()}else if(e.type==='hit'){dismissFtue();perfectStreak=0;beginSwingSmear('good');beginBatterSettle('swing');const hx=e.x??game.zone.x,hy=e.y??game.zone.y;queueBeatWarpImpact('good',hx,hy)}else if(e.type==='whiff'){perfectStreak=0;beginSwingSmear('miss');beginBatterSettle('swing');const near=isNearMissWhiff();if(near){spawnNearMissJuice()}else{spawnMissDust(game.zone.x,game.zone.y);say('헛스윙','#b8cccc',.45)}/* miss hitstop 0ms */}else if(e.type==='lastStand'){say('끝까지 버티기! · 체력 1','#a7ffe3',1.3);burst(game.player.x,game.player.y,'#a7ffe3',24)}else if(e.type==='damage'){perfectStreak=0;beginBatterSettle('damage');say('피격!','#ff9a84');setFlash(.18,'damage');shake=.16;burst(e.x,e.y,'#ff997d');}else if(e.type==='windup'){const aimBait=e.pattern==='aimLockFire'||e.aimLockFire;const msg=aimBait?'⚠ 고정 조준 · 피하세요':({double:'연속 직구 · 두 번 받아치세요',changeFast:'체인지업 → 직구 · 기다렸다 두 번!',slider:'슬라이더 · 휘는 공을 따라가세요',fakeFire:'직구 · 받아치세요'}[e.pattern]||(e.pitch==='fire'?'⚠ 불꽃 마구 · 회피':e.pitch==='slow'?'체인지업 · 기다리세요':'직구 · 받아치세요'));const pc=$('#pitchcall');pc.innerHTML='<span>'+msg+'</span>';pc.style.color=aimBait?'#FFC9A8':e.pitch==='fire'?'#FFC9A8':e.pitch==='slow'?'#a5e7ff':'#f4eacb';pc.classList.toggle('aim-bait',!!aimBait);callTime=4;if(aimBait){const lx=game.windup?.tx??game.player.x,ly=game.zone?.y??game.player.y-42;spawnAimLockMintPulse(lx,ly);burst(lx,ly,'#9BFFE6',5)}if(e.pitch==='fire'&&!e.fakeFire&&!fireCoachShown){fireCoachShown=true;showFirstFireIntroToast()}}else if(e.type==='fakeFireReveal'){$('#pitchcall').classList.remove('aim-bait');$('#pitchcall').innerHTML='<span>⚠ 불꽃!</span>';$('#pitchcall').style.color='#ffab88';callTime=4;if(!fireCoachShown){fireCoachShown=true;showFirstFireIntroToast()}}else if(e.type==='pitch'){pitchPoseTime=.55;if(ftueActive){ftuePitchCount++;if(ftuePitchCount>=4)dismissFtue()}}else if(e.type==='twin'){say('희원이의 도움!','#d9b5ff',1.1);burst(240,250,'#d59cff',22)}else if(e.type==='impact'){bossImpact=.2;burst(240,280,e.perfect?'#ffdb82':'#c3efd3',18);beginHeedongHitJuice(!!e.perfect)}else if(e.type==='rally'){say('RALLY x'+e.count+' · 홈런 찬스!','#ffe38c',1.1);burst(240,280,'#ffb84d',32);spawnFriendCheer(240,300,{power:.42});applyFreeze(.06,.24)}else if(e.type==='reaction'){say(pickHeedongTaunt(e.line),'#d3e8ff',1.15)}else if(e.type==='vulnerable'){beginBatterSettle('dodge');spawnFireDodgeJuice(game.zone.x,game.zone.y);vulnToastDelay=.75;burst(240,280,'#FFE09A',16);burst(240,290,'#fff8e0',10)}else if(e.type==='fury')say('승부는 지금부터!','#ffd18b',1.2);else if(e.type==='end')end()}hud()}
+ if(e.type!=='perfect'&&e.type!=='hit')sound(e.type,e);if(e.type==='perfect'){dismissFtue();perfectStreak++;records.update(game.stage,game.perfects);beginSwingSmear('perfect');beginBatterSettle('swing');const hx=e.x??game.zone.x,hy=e.y??game.zone.y;spawnFriendCheer(hx,hy,{power:1});queueBeatWarpImpact('perfect',hx,hy);triggerCamPunch()}else if(e.type==='hit'){dismissFtue();perfectStreak=0;beginSwingSmear('good');beginBatterSettle('swing');const hx=e.x??game.zone.x,hy=e.y??game.zone.y;queueBeatWarpImpact('good',hx,hy)}else if(e.type==='whiff'){perfectStreak=0;beginSwingSmear('miss');beginBatterSettle('swing');const near=isNearMissWhiff();if(near){spawnNearMissJuice();playDopplerWhizz('near',42)}else{spawnMissDust(game.zone.x,game.zone.y);say('헛스윙','#b8cccc',.45)}/* miss hitstop 0ms */}else if(e.type==='lastStand'){say('끝까지 버티기! · 체력 1','#a7ffe3',1.3);burst(game.player.x,game.player.y,'#a7ffe3',24)}else if(e.type==='damage'){perfectStreak=0;beginBatterSettle('damage');say('피격!','#ff9a84');setFlash(.18,'damage');shake=.16;burst(e.x,e.y,'#ff997d');}else if(e.type==='windup'){const aimBait=e.pattern==='aimLockFire'||e.aimLockFire;const msg=aimBait?'⚠ 고정 조준 · 피하세요':({double:'연속 직구 · 두 번 받아치세요',changeFast:'체인지업 → 직구 · 기다렸다 두 번!',slider:'슬라이더 · 휘는 공을 따라가세요',fakeFire:'직구 · 받아치세요'}[e.pattern]||(e.pitch==='fire'?'⚠ 불꽃 마구 · 회피':e.pitch==='slow'?'체인지업 · 기다리세요':'직구 · 받아치세요'));const pc=$('#pitchcall');pc.innerHTML='<span>'+msg+'</span>';pc.style.color=aimBait?'#FFC9A8':e.pitch==='fire'?'#FFC9A8':e.pitch==='slow'?'#a5e7ff':'#f4eacb';pc.classList.toggle('aim-bait',!!aimBait);callTime=4;if(aimBait){const lx=game.windup?.tx??game.player.x,ly=game.zone?.y??game.player.y-42;spawnAimLockMintPulse(lx,ly);burst(lx,ly,'#9BFFE6',5)}if(e.pitch==='fire'&&!e.fakeFire&&!fireCoachShown){fireCoachShown=true;showFirstFireIntroToast()}}else if(e.type==='fakeFireReveal'){$('#pitchcall').classList.remove('aim-bait');$('#pitchcall').innerHTML='<span>⚠ 불꽃!</span>';$('#pitchcall').style.color='#ffab88';callTime=4;if(!fireCoachShown){fireCoachShown=true;showFirstFireIntroToast()}}else if(e.type==='pitch'){pitchPoseTime=.55;if(ftueActive){ftuePitchCount++;if(ftuePitchCount>=4)dismissFtue()}}else if(e.type==='twin'){say('희원이의 도움!','#d9b5ff',1.1);burst(240,250,'#d59cff',22)}else if(e.type==='impact'){bossImpact=.2;burst(240,280,e.perfect?'#ffdb82':'#c3efd3',18);beginHeedongHitJuice(!!e.perfect)}else if(e.type==='rally'){say('RALLY x'+e.count+' · 홈런 찬스!','#ffe38c',1.1);burst(240,280,'#ffb84d',32);spawnFriendCheer(240,300,{power:.42});applyFreeze(.06,.24)}else if(e.type==='reaction'){say(pickHeedongTaunt(e.line),'#d3e8ff',1.15)}else if(e.type==='vulnerable'){beginBatterSettle('dodge');spawnFireDodgeJuice(game.zone.x,game.zone.y);vulnToastDelay=.75;burst(240,280,'#FFE09A',16);burst(240,290,'#fff8e0',10)}else if(e.type==='fury')say('승부는 지금부터!','#ffd18b',1.2);else if(e.type==='end')end()}hud()}
 // Ball shadow depth cue v1 (visual only) — orthogonal to tipping / shape lang / BeatWarp / judgment
 function depthLerp(a,b,t){return a+(b-a)*t}
 function depthClamp01(t){return t<0?0:t>1?1:t}
@@ -2147,7 +2217,7 @@ function draw(){
  }
  drawNearMissVignette();
 }
-function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(ftueFade>0)ftueFade=Math.max(0,ftueFade-dt);if(ghostBatFade>0)ghostBatFade=Math.max(0,ghostBatFade-dt/.28);if(ghostBatSpark>0)ghostBatSpark=Math.max(0,ghostBatSpark-dt);if(swingSmear)updateSwingSmear(dt);updateBatterSettle(dt);updateHeedongHitJuice(dt);updateHudEase(dt);if(hudEaseActive())hud();if(pointer&&fingerGuideClient){syncFingerGuideThumb();fingerGuideFade=1}else if(fingerGuideFade>0)fingerGuideFade=Math.max(0,fingerGuideFade-dt/.12);if(game.state==='playing'){updateBeatWarpQ(dt);if(ftueActive){ftuePlayTime+=dt;if(ftuePlayTime>=30)dismissFtue()}let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(typeof game.setAimBaitSense==='function')game.setAimBaitSense({held:!!pointer,holdLock:holdLockOn(),lockX:game.player.x});if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';if(vulnToastDelay>0){vulnToastDelay-=dt;if(vulnToastDelay<=0){vulnToastDelay=0;say('약점 노출! · PERFECT ×1.2','#FFE09A',1.1)}}if(phaseBannerTime>0){phaseBannerTime-=dt;if(phaseBannerTime<=0)hidePhaseBanner()}callTime-=dt;if(callTime<=0){$('#pitchcall').textContent='';$('#pitchcall').classList.remove('aim-bait')}pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);if(camPunchLife>0){camPunchLife=Math.max(0,camPunchLife-dt);if(camPunchLife<=0)camPunch=0}for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0);updateJuice(dt)}else {if(beatWarpQ.length)updateBeatWarpQ(dt);if(juiceFx.length||nearMissEdge>0)updateJuice(dt)}if(vfxMoodEnabled()){if(cheers.length)updateCheers(dt)}else if(cheers.length)clearMoodLane();draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
+function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(ftueFade>0)ftueFade=Math.max(0,ftueFade-dt);if(ghostBatFade>0)ghostBatFade=Math.max(0,ghostBatFade-dt/.28);if(ghostBatSpark>0)ghostBatSpark=Math.max(0,ghostBatSpark-dt);if(swingSmear)updateSwingSmear(dt);updateBatterSettle(dt);updateHeedongHitJuice(dt);updateHudEase(dt);if(hudEaseActive())hud();if(pointer&&fingerGuideClient){syncFingerGuideThumb();fingerGuideFade=1}else if(fingerGuideFade>0)fingerGuideFade=Math.max(0,fingerGuideFade-dt/.12);if(game.state==='playing'){updateBeatWarpQ(dt);if(ftueActive){ftuePlayTime+=dt;if(ftuePlayTime>=30)dismissFtue()}let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(typeof game.setAimBaitSense==='function')game.setAimBaitSense({held:!!pointer,holdLock:holdLockOn(),lockX:game.player.x});if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();updateFireDodgeWhizz();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';if(vulnToastDelay>0){vulnToastDelay-=dt;if(vulnToastDelay<=0){vulnToastDelay=0;say('약점 노출! · PERFECT ×1.2','#FFE09A',1.1)}}if(phaseBannerTime>0){phaseBannerTime-=dt;if(phaseBannerTime<=0)hidePhaseBanner()}callTime-=dt;if(callTime<=0){$('#pitchcall').textContent='';$('#pitchcall').classList.remove('aim-bait')}pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);if(camPunchLife>0){camPunchLife=Math.max(0,camPunchLife-dt);if(camPunchLife<=0)camPunch=0}for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0);updateJuice(dt)}else {if(beatWarpQ.length)updateBeatWarpQ(dt);if(juiceFx.length||nearMissEdge>0)updateJuice(dt)}if(vfxMoodEnabled()){if(cheers.length)updateCheers(dt)}else if(cheers.length)clearMoodLane();draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'read_baseball_game',description:'Read the current baseball parry match state.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({state:game.state,health:game.hp,bossHealth:game.boss,perfects:game.perfects,combo:game.combo,seconds:Math.floor(game.time)})})).catch(()=>{})}catch{}}
 
 function loadAsset(img,url){return new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error(url));img.src=url})}
