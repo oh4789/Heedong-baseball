@@ -1568,6 +1568,108 @@ function currentPitchPose(){
  if(pitchPoseTime>0)return 'follow';
  return 'idle';
 }
+// Heedong fire eye tell v1 (visual only) — orthogonal to tipping / seam / VO
+// Low-end: canvas soft↔lock 2-frame eye overlay (no face rig). Ban #FF3B3B.
+const EYE_TELL_WINDOW_MIN_MS=120;
+const EYE_TELL_WINDOW_MAX_MS=250;
+const EYE_TELL_WINDOW_MS=185; // recommended · ends at release (negative ms window)
+const EYE_TELL_ONLY_FIRE=true; // HARD: ON → pitch type must be fire
+const EYE_TELL_FAKE_ALLOWED=false;
+const EYE_HIGHLIGHT_PULSES=1; // 0 = brow only
+function eyeTellWindowMs(){
+ return Math.max(EYE_TELL_WINDOW_MIN_MS,Math.min(EYE_TELL_WINDOW_MAX_MS,EYE_TELL_WINDOW_MS));
+}
+function isFireEyeTellActive(){
+ // HARD no-fake: eye ON only when windup display type is fire + last window ms.
+ // Ends with windup (release); never overlaps seam contrast peak (80–200ms post-release).
+ const w=game.windup;
+ if(!w)return false;
+ if(EYE_TELL_ONLY_FIRE&&w.type!=='fire')return false;
+ if(!EYE_TELL_FAKE_ALLOWED&&w.fakeFire&&!w.revealed)return false;
+ const remainMs=Math.max(0,w.t)*1000;
+ return remainMs>0&&remainMs<=eyeTellWindowMs();
+}
+function eyeTellInContrastWindow(){
+ // Same absolute release window used for A(soft) vs B(lock) contrast — visual only.
+ const w=game.windup;
+ if(!w)return false;
+ const remainMs=Math.max(0,w.t)*1000;
+ return remainMs>0&&remainMs<=eyeTellWindowMs();
+}
+function eyeTellAnchor(){
+ // Face crop eyes on pitcher poses (canvas space). Late window uses arm_swing.
+ const pose=currentPitchPose();
+ if(pose==='arm_swing')return{lx:191,ly:173,rx:219,ry:182,cx:205,cy:178};
+ return{lx:216,ly:177,rx:247,ry:172,cx:231,cy:174};
+}
+function drawEyeSpriteSoft(ax){
+ // Side / soft gaze — cream lids, pupils drift viewer-right (pitcher left)
+ const cream='#F7F3E8', navy='#081329', iris='#3A4A62';
+ const eyes=[[ax.lx,ax.ly],[ax.rx,ax.ry]];
+ for(const[ex,ey] of eyes){
+  ctx.fillStyle=cream;ctx.globalAlpha=.92;
+  ctx.beginPath();ctx.ellipse(ex,ey,5.2,3.4,0,0,7);ctx.fill();
+  ctx.fillStyle=navy;ctx.globalAlpha=.55;
+  ctx.beginPath();ctx.ellipse(ex+2.2,ey+.2,2.1,2.0,0,0,7);ctx.fill();
+  ctx.fillStyle=iris;ctx.globalAlpha=.35;
+  ctx.beginPath();ctx.ellipse(ex+2.0,ey,3.4,2.2,0,0,7);ctx.fill();
+ }
+ // relaxed brow — no furrow
+ ctx.globalAlpha=.28;ctx.strokeStyle='#C4A574';ctx.lineWidth=1.2;ctx.lineCap='round';
+ ctx.beginPath();ctx.moveTo(ax.cx-10,ax.cy-7);ctx.quadraticCurveTo(ax.cx,ax.cy-8.5,ax.cx+10,ax.cy-7);ctx.stroke();
+}
+function drawEyeSpriteLock(ax,pulseA){
+ // Camera LOCK + baked brow; optional amber highlight 1-pulse (never #FF3B3B)
+ const cream='#F7F3E8', navy='#081329', iris='#1E2A3C', amber='#FFD25B', coral='#FFAB88';
+ const eyes=[[ax.lx,ax.ly],[ax.rx,ax.ry]];
+ for(const[ex,ey] of eyes){
+  ctx.fillStyle=cream;ctx.globalAlpha=.98;
+  ctx.beginPath();ctx.ellipse(ex,ey,5.4,3.6,0,0,7);ctx.fill();
+  ctx.fillStyle=iris;ctx.globalAlpha=.9;
+  ctx.beginPath();ctx.ellipse(ex,ey+.15,2.6,2.5,0,0,7);ctx.fill();
+  ctx.fillStyle=navy;ctx.globalAlpha=1;
+  ctx.beginPath();ctx.ellipse(ex,ey+.15,1.35,1.3,0,0,7);ctx.fill();
+  // forward catchlight
+  ctx.fillStyle='#FFFFFF';ctx.globalAlpha=.75;
+  ctx.beginPath();ctx.arc(ex-0.7,ey-0.6,0.7,0,7);ctx.fill();
+ }
+ // micro brow furrow
+ ctx.globalAlpha=.7;ctx.strokeStyle=coral;ctx.lineWidth=1.5;ctx.lineCap='round';
+ ctx.beginPath();ctx.moveTo(ax.cx-9,ax.cy-8.5);ctx.lineTo(ax.cx-1.5,ax.cy-6.2);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(ax.cx+9,ax.cy-8.5);ctx.lineTo(ax.cx+1.5,ax.cy-6.2);ctx.stroke();
+ if(pulseA>0){
+  ctx.globalAlpha=pulseA;ctx.fillStyle=amber;ctx.shadowColor=amber;ctx.shadowBlur=10;
+  ctx.beginPath();ctx.arc(ax.cx,ax.cy-1,3.2,0,7);ctx.fill();
+  ctx.shadowBlur=0;
+  // cap ornament glint (secondary, still 1 pulse)
+  ctx.globalAlpha=pulseA*.55;ctx.fillStyle='#F7F3E8';
+  ctx.beginPath();ctx.arc(ax.cx,ax.cy-18,2.4,0,7);ctx.fill();
+ }
+}
+function drawHeedongFireEyeTell(){
+ // Face channel only. Judgment / pitch odds / tipping / seam / VO untouched.
+ if(!eyeTellInContrastWindow())return;
+ const lock=isFireEyeTellActive();
+ // HARD assert: never draw lock without fire type
+ if(lock&&(!game.windup||game.windup.type!=='fire'))return;
+ const ax=eyeTellAnchor();
+ const rm=reduceMotion();
+ let pulseA=0;
+ if(lock&&EYE_HIGHLIGHT_PULSES>0){
+  const win=eyeTellWindowMs();
+  const remainMs=Math.max(0,game.windup.t)*1000;
+  const elapsed=win-remainMs; // 0 at window open → win at release
+  const pulseDur=rm?16:55; // RM: 1-frame snap ≈16ms
+  if(elapsed>=0&&elapsed<=pulseDur){
+   const u=1-elapsed/pulseDur;
+   pulseA=rm?0.85:(0.35+0.65*u);
+  }
+ }
+ ctx.save();
+ if(lock)drawEyeSpriteLock(ax,pulseA);
+ else drawEyeSpriteSoft(ax); // normal pitch same window: side/soft OFF tell
+ ctx.restore();
+}
 function drawPitchTipping(){
  // Orthogonal windup glove tip (visual only). Cream/leather — never #FF3B3B.
  // Independent of Soft Heat, fakeout mint telegraph, and fire 3-stage lane colors.
@@ -1665,7 +1767,7 @@ function drawPitcher(){
    ctx.beginPath();ctx.arc(240,268,26+pulse*5,0,7);ctx.stroke();
   }
  }
- if(game.windup)drawPitchTipping();
+ if(game.windup){drawHeedongFireEyeTell();drawPitchTipping()}
 }
 function currentBatterPose(){
  if(game.swingAnim<=0)return 'ready';
