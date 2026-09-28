@@ -2,6 +2,112 @@
 
 한눈에 보기: [디자인 갤러리](index.html) · 미러 https://oh4789.github.io/Heedong-baseball/ · 전체 개발로그 `/workspace/game-development-log.md`
 
+## 2026-09-28 저녁 — 접촉 스쿼시·스트레치 펀치
+
+### 개선
+- PM 러너업 **배트/공 스쿼시·스케일 스프링 펀치**를 저녁 시안으로 실행: 오브젝트 scale만(카메라 아님)
+- IDLE→SQUASH→STRETCH→SETTLE 4프레임 보드 + Perfect 풀/Good≈0.55×/Miss OFF · reduce-motion 주석
+- 외부 레퍼 2건(Josh Comeau squash-and-stretch · Feel MMF_SquashAndStretchSpring) — AM/midday/pm과 다른 링크
+- **HARD 준수:** Hold/Charge·Miss 임펄스·크로매틱 수차·접촉 플로팅 텍스트 미제작
+
+### 에셋·자료
+- ✅ [접촉 스쿼시·스트레치 펀치 v1](assets/bat-ball-squash-punch-v1.png)
+- ✅ [프로그래머 스펙](refs/bat-ball-squash-punch-v1.md)
+- ✅ [저녁 레퍼런스](research/refs-20260928-evening.md)
+- 근거: [ideas-batch PM 러너업](research/ideas-batch-20260928-pm.md)
+
+### 비고
+- 시안만(PIL 보드). 판정·점수·engine 불변. Director 구현 대기.
+- 임팩트 프레임·트레일·DoF·마운드 먼지·카메라 트라우마와 직교(오브젝트 scale 채널).
+
+
+## 2026-09-28 오후 — 마운드·플레이트 환경 먼지
+
+### 개선
+- PM TOP2 **마운드 릴리즈·플레이트 도착 먼지**: 세계 잔향만(결과·구종 무관, 타이밍 힌트 금지)
+- 고정 테이블 입자·낮은 α · 배트 접촉 더스트와 슬롯 분리
+- 외부 레퍼(Swink environmental response · MoCap foot-notify dust) — AM/midday와 다른 링크
+- **HARD 준수:** Perfect 크로매틱 수차·접촉 플로팅 텍스트 미제작
+
+### 에셋·자료
+- ✅ [마운드·플레이트 먼지 v1](assets/mound-plate-dust-v1.png)
+- ✅ [프로그래머 스펙](refs/mound-plate-dust-v1.md)
+- ✅ [오후 레퍼런스](research/refs-20260928-pm.md)
+- 근거: [ideas-batch PM](research/ideas-batch-20260928-pm.md)
+
+### 비고
+- 시안만. 판정·점수·engine 불변. Director 구현 대기.
+- 트레일·임팩트 프레임·DoF·스쿼시와 직교(환경 레이어).
+
+## 2026-09-28 한낮 — 릴리즈·존 집중 DoF
+
+### 개선
+- AM 러너업 **Hitting Depth of Field**를 한낮 시안으로 실행: 접근 중만 소프트 배경 블러 → 릴리즈·공·존 집중
+- OFF(평탄)·ON(블러) 2패널 보드 + 블러 강도·적용 구간·reduce-motion/GPU 주석
+- 외부 레퍼 2건(U4N The Show 26 DoF · Unity 2D 배경 블러 가독) — AM Showzone/OS와 다른 링크
+- **HARD 준수:** 불꽃 Hold/Charge·Miss 방향 임펄스 미제작
+
+### 에셋·자료
+- ✅ [릴리즈·존 집중 DoF v1](assets/pitch-release-dof-focus-v1.png)
+- ✅ [프로그래머 스펙](refs/pitch-release-dof-focus-v1.md)
+- ✅ [한낮 레퍼런스](research/refs-20260928-midday.md)
+- 근거: [ideas-batch AM 러너업](research/ideas-batch-20260928-am.md)
+
+### 비고
+- 시안만(PIL 보드). 판정·점수·engine 불변. Director 구현 대기.
+- AM TOP1 트레일·TOP2 임팩트 프레임과 직교(카메라/배경 채널).
+
+## 2026-09-28 오전 — 공 트레일·Perfect 임팩트 프레임
+
+### 개선
+- AM TOP1 **공 비행 트레일 잔광**: 과거 위치 짧은 페이드(일반 크림 / 불꽃 오렌지, Perfect 금빛과 시간 겹침 0)
+- AM TOP2 **Perfect 전용 임팩트 프레임**: 접촉점 원형 흑백·잉크 1컷(16–40ms), 히트스톱·카메라 불변
+- 보조 텍스처 `perfect-impact-ink-lines-v1` · 외부 레퍼(Flukz trail · Lush impact frames 등)
+- **HARD 준수:** 불꽃 Hold/Charge 정지 텔 미제작
+
+### 에셋·자료
+- ✅ [공 비행 트레일 v1](assets/ball-flight-trail-v1.png)
+- ✅ [Perfect 임팩트 프레임 v1](assets/perfect-impact-frame-v1.png)
+- ✅ [잉크 속도선 텍스처](assets/perfect-impact-ink-lines-v1.png)
+- ✅ [트레일 스펙](refs/ball-flight-trail-v1.md) · [임팩트 스펙](refs/perfect-impact-frame-v1.md)
+- ✅ [오전 레퍼런스](research/refs-20260928-am.md)
+- 근거: [ideas-batch AM](research/ideas-batch-20260928-am.md)
+
+### 비고
+- 시안·스펙만. 판정·점수·engine 불변. Director 구현 대기.
+- 한낮 DoF·저녁 스쿼시·오후 먼지와 직교(비행 잔광 / 화면 스타일 채널).
+
+## 2026-09-24 저녁 — 연타 배율 칩 모션(pop/settle/reset)
+
+### 개선
+- 정적 `combo-mult-chip-v1`의 **증가 pop · hot settle · 리셋 shake** 모션 시트(판정·배율 공식 불변)
+- 외부 레퍼 2건(SEELE clicker UI scale pop · UI Juice Scale Punch/Reduce Motion) — 오늘 am/midday/pm과 다른 링크
+- Miss 방향 임펄스·불꽃/시임/휘즈와 직교(HUD 채널)
+
+### 에셋·자료
+- ✅ [연타 배율 칩 모션 v1](assets/combo-mult-chip-motion-v1.png)
+- ✅ [프로그래머 스펙](refs/combo-mult-chip-motion-v1.md)
+- ✅ [저녁 레퍼런스](research/refs-20260924-evening.md)
+
+### 비고
+- 시안만. Director 구현 대기. 정적 원본 `combo-mult-chip-v1` 유지.
+
+## 2026-09-24 한낮 — 공기 휘즈 패스바이(Doppler sync)
+
+### 개선
+- Director AM TOP2: 니어미스·불꽃 회피 **공기 휘즈**의 **시각 동기 모션 시트**(approach→closest→pass→settle, 80–150ms)
+- 불꽃 회피 강(~120ms) vs 일반 아슬아슬 약(~85ms) · Doppler 피치↑↓ 주석 · near-miss-flash/스침/회피 juice와 **분리**
+- 외부 레퍼 2건(Dodge This pass-by · Wwise Doppler RTPC) — AM CRI/cogconnected와 다른 링크
+
+### 에셋·자료
+- ✅ [공기 휘즈 패스바이 v1](assets/air-whizz-passby-v1.png)
+- ✅ [프로그래머 스펙](refs/air-whizz-passby-v1.md)
+- ✅ [한낮 레퍼런스](research/refs-20260924-midday.md)
+- 근거: [ideas-batch AM TOP2](research/ideas-batch-20260924-am.md)
+
+### 비고
+- 판정·점수·코드 변경 없음(시안만). AM TOP1 시임·TOP3 눈빛은 이미 완료.
+
 ## 2026-09-23 저녁 — 고정형 유도 불꽃(aim-lock bait fire) 시안
 
 ### 개선
@@ -151,19 +257,20 @@
 
 ## 최근 커밋 (참고)
 ```
-9c611e2 feat: add ghost bat silhouette for hold-lock
-52f8c43 ui: match vulnerable glow to gold-white design v1
-b559660 feat: fire dodge opens vulnerable window
-d04024a feat: perfect hitstop and touch latency compensate
-dbf3e17 feat: draw easy pitch silhouette when option on
-685d0e6 feat: add optional hold-lock aim assist
-79a0a49 feat: add telegraph shape language for windups
-a2b39c7 feat: add local friend cheer FX on perfect
-feb1961 feat: add inning-stop soft exit CTA
-ac61996 feat: add boss phase HP chunks and banner
-9f562aa feat: add procedural pitch-ladder SFX
-7f037b9 feat: add fail-line review card on result
-05e5f87 feat: add 30s swing FTUE hit-zone guide
+5bb8222 ui: fire dodge afterimage
+5d9dff3 ui: fire heat haze halo
+db91d92 ui: air whizz passby streak sync
+9ec41bf ui: near-miss dodge doppler whizz
+98db028 ui: heedong fire eye tell
+3fa447d ui: ball seam spin pitch tell
+8104a49 docs: refresh design diary for 9/23 polish
+1ffbc01 ui: aim-lock bait fire visual polish
+36f2bdc ui: vfx mood lane toggle
+5a91e94 ui: vfx lane clash clamp fire tel and toast
+1e5c74c ui: fade ball shadow under fire land oval
+5b601fb ui: ball shadow depth approach cue
+750dee9 ui: heedong hit flash and micro recoil
+f3f50e8 ui: first-fire toast motion sheet pop hold fade
 ```
 
-_자동 갱신 2026-09-23. Director가 일자별로 갱신._
+_자동 갱신 2026-09-28. Director가 일자별로 갱신._
