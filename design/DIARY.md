@@ -2,6 +2,43 @@
 
 한눈에 보기: [디자인 갤러리](index.html) · 미러 https://oh4789.github.io/Heedong-baseball/ · 전체 개발로그 `/workspace/game-development-log.md`
 
+## 2026-09-29 오전 — Perfect FOV 줌 펀치
+
+### 개선
+- AM TOP① **Perfect FOV 줌 펀치** 시안: 렌즈 FOV / 2D ortho size / view-scale만(카메라 위치·회전 고정)
+- IDLE→ZOOM-IN→HOLD→RETURN 4프레임 보드 + Perfect 풀(6–12%) / Good ½ or OFF / Miss OFF · reduce-motion OFF
+- 외부 레퍼 2건(VionixStudio orthographicSize · Solana Garden FOV/ortho feel) — Feel/GJP/Saltmire와 다른 링크
+- **HARD 준수:** Hold/Charge·Miss임펄스·CA·플로팅텍스트 미제작
+
+### 에셋·자료
+- ✅ [Perfect FOV 줌 펀치 v1](assets/perfect-fov-zoom-punch-v1.png)
+- ✅ [프로그래머 스펙](refs/perfect-fov-zoom-punch-v1.md)
+- ✅ [오전 디자인 레퍼런스](research/refs-20260929-design-am.md)
+- 근거: [ideas-batch AM TOP①](research/ideas-batch-20260929-am.md)
+
+### 비고
+- 시안만(PIL 보드). 판정·점수·engine 불변. Director 구현 대기.
+- Trauma/Miss임펄스/방향킥·DoF·CA·스쿼시와 직교(시야각/ortho 채널).
+
+## 2026-09-29 오후 — 페이즈 월드 시프트 · 패배 잔여 HP 히어로
+
+### 개선
+- PM TOP① **보스 페이즈 월드 시프트**: 기존 HP 임계에서 구장 팔레트·희동이 실루엣 한 단 + 소형 칩「2회」/「FINAL」(HP청크·배너와 다른 채널)
+- PM TOP② **패배 거의 이김 잔여 HP 히어로**: 결과 최상단 `희동이 HP 남은 XX%` · ≤15%「한 방이었다」 · 도전≥3 프라이드 1줄 · sticky「다시 승부」만
+- **HARD 준수:** 페이즈 HP 청크·보스 배너 재도입 금지 · soft continue·EARLY/LATE·Perfect 스크린 juice 미제작
+- 저녁 슬롯: VFX 신규 시안 일시 정지(Perfect impact 큐 선적 전) — 레퍼런스만, PNG 없음
+
+### 에셋·자료
+- ✅ [페이즈 월드 시프트 v1](assets/phase-world-shift-v1.png)
+- ✅ [패배 잔여 HP 히어로 v1](assets/defeat-near-win-hp-hero-v1.png)
+- ✅ [월드 시프트 스펙](refs/phase-world-shift-v1.md) · [HP 히어로 스펙](refs/defeat-near-win-hp-hero-v1.md)
+- ✅ [오후 레퍼런스](research/refs-20260929-pm.md) · [저녁 레퍼런스](research/refs-20260929-evening.md)
+- 근거: [ideas-batch PM](research/ideas-batch-20260929-pm.md)
+
+### 비고
+- 시안·스펙만. 판정·점수·engine·HP 임계값 불변. Director 구현 대기.
+- FOV/스쿼시/먼지/임팩트프레임과 직교(월드·결과 레이아웃 채널).
+
 ## 2026-09-28 저녁 — 접촉 스쿼시·스트레치 펀치
 
 ### 개선
