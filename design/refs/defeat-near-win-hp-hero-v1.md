@@ -178,9 +178,24 @@ FORBIDDEN_HEX          = #FF3B3B
 ## 팔레트
 `#081329` · `#F7F3E8` · `#FFE09A` · `#FFD25B` · `#FF986E` · `#FFAB88` · `#9BFFE6` · `#C3A4FF` · `#416EFF` · `#775CFF` · `#A4BEDC`
 
+## 참고 · 「바꿀 한 수」카피 풀 (Director 2026-09-30 · 스토리 카피 확정)
+
+패배 결과 보조 슬롯용. **잔여 HP% 히어로 · PB 델타와 자리 분리**. 코드·프로그래머 큐 없음(참고만).
+
+| # | 카피 |
+|---|---|
+| 1 | 다음: 불꽃은 스윙 말고 피하기 |
+| 2 | 다음: 칠 공만 골라. |
+| 3 | 다음: 타이밍 안 오면 그냥 피해. |
+| 4 | 다음: 한 방만 제대로. |
+| 5 | 다음: 욕심내지 말고 골라 쳐. |
+
+규칙: 세션당 연속 동일 문장 최소화. soft continue · EARLY/LATE · 연승 배지와 무관.
+
 ## 관련
 - 시안: `design/assets/defeat-near-win-hp-hero-v1.png`
 - 근거: `design/research/ideas-batch-20260929-pm.md` TOP②
 - 링크집: `design/research/refs-20260929-pm.md`
 - 대조(골격 유지·히어로만 추가): `result-panel-polish-v1` · 패배 `failLineCardHtml` · sticky CTA
 - 승리 카드와 혼동 금지: `result-victory-v1`
+- appendix(개인 베스트 델타 1줄): `design/refs/defeat-pb-delta-line-v1.md` · `design/assets/defeat-pb-delta-line-v1.png`

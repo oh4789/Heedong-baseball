@@ -2,6 +2,25 @@
 
 한눈에 보기: [디자인 갤러리](index.html) · 미러 https://oh4789.github.io/Heedong-baseball/ · 전체 개발로그 `/workspace/game-development-log.md`
 
+## 2026-09-30 — 패배 개인 베스트 델타 · 리트라이/사운드 리서치
+
+### 개선
+- AM TOP② **패배 개인 베스트 델타** 시안: 잔여 HP 히어로 아래 보조 1줄(`개인 최고까지 ΔN%p` / `신기록!…`) — 히어로·CTA 불변
+- PM 리서치: 관중 빌보드 치어 스파이크 · 「바꿀 한 수」전략 프롬프트 · 불꽃 회피 성공 처프(SFX) — 시안 PNG 없음
+- 부모 스펙에 「바꿀 한 수」카피 풀 5문장 참고 추가(스토리 카피 확정 · 프로그래머 큐 아님)
+- 저녁: VFX 신규 시안 정지 유지(Perfect impact 선적 전) — 레퍼런스만
+- **HARD 준수:** soft continue·EARLY/LATE·월드 시프트/보드·플로드라이트·비행 라이저 재제안 금지
+
+### 에셋·자료
+- ✅ [패배 PB 델타 v1](assets/defeat-pb-delta-line-v1.png)
+- ✅ [프로그래머 스펙](refs/defeat-pb-delta-line-v1.md) · [히어로 스펙 갱신](refs/defeat-near-win-hp-hero-v1.md)
+- ✅ [AM 아이디어](research/ideas-batch-20260930-am.md) · [PM 아이디어](research/ideas-batch-20260930-pm.md)
+- ✅ [AM/디자인/PM/저녁 레퍼](research/refs-20260930-am.md) · [design-am](research/refs-20260930-design-am.md) · [pm](research/refs-20260930-pm.md) · [evening](research/refs-20260930-evening.md)
+
+### 비고
+- PB 델타 시안·스펙만. 판정·점수·engine 불변. Perfect impact 큐 이후 구현 대기.
+- 히어로(절대 XX%)와 직교(역대 최저 잔여 HP% 비교 채널).
+
 ## 2026-09-29 오전 — Perfect FOV 줌 펀치
 
 ### 개선
