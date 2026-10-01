@@ -613,6 +613,108 @@ function updateHudEase(dt){
 }
 function hudEaseActive(){return !!(hudEase.boss||hudEase.hp||hudEase.combo||hudEase.perfects)}
 
+// Combo mult chip motion v1 — HUD only; multiplier display cosmetic (scoring/judgment untouched)
+const COMBO_MULT_HOT_AT=4;
+const COMBO_MULT_POP=.12, COMBO_MULT_SETTLE=.08, COMBO_MULT_RESET=.18;
+const COMBO_MULT_SHAKE_PX=5;
+let comboMultChip={track:0,value:1,ghost:null,state:'idle',age:0,scale:1,tx:0,ghostA:0,sparks:0};
+function comboMultDisplay(combo){return Math.max(1,combo|0)}
+function comboMultRim(value,state){
+ if(state==='reset')return 'muted';
+ if(value>=COMBO_MULT_HOT_AT)return 'coral';
+ return 'cream';
+}
+function easeOutCubic(t){return 1-Math.pow(1-t,3)}
+function easeOutBack(t){const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2)}
+function resetComboMultChip(){
+ comboMultChip={track:game.combo|0,value:comboMultDisplay(game.combo),ghost:null,state:'idle',age:0,scale:1,tx:0,ghostA:0,sparks:0};
+ paintComboMultChip();
+}
+function triggerComboMultPop(fromVal,toVal){
+ const rm=reduceMotion();
+ comboMultChip.value=toVal;
+ comboMultChip.ghost=fromVal;
+ if(rm){
+  comboMultChip.state='idle';comboMultChip.age=0;comboMultChip.scale=1;comboMultChip.tx=0;
+  comboMultChip.ghostA=0;comboMultChip.sparks=0;comboMultChip.ghost=null;
+  paintComboMultChip();return;
+ }
+ comboMultChip.state='pop';comboMultChip.age=0;comboMultChip.scale=.92;comboMultChip.tx=0;
+ comboMultChip.ghostA=.7;comboMultChip.sparks=1;
+ paintComboMultChip();
+}
+function triggerComboMultReset(){
+ const rm=reduceMotion();
+ comboMultChip.value=1;comboMultChip.ghost=null;comboMultChip.ghostA=0;comboMultChip.sparks=0;
+ if(rm){
+  comboMultChip.state='idle';comboMultChip.age=0;comboMultChip.scale=1;comboMultChip.tx=0;
+  paintComboMultChip();return;
+ }
+ comboMultChip.state='reset';comboMultChip.age=0;comboMultChip.scale=1;comboMultChip.tx=0;
+ paintComboMultChip();
+}
+function syncComboMultChip(){
+ const cur=game.combo|0;
+ const prev=comboMultChip.track;
+ if(cur===prev)return;
+ comboMultChip.track=cur;
+ const toVal=comboMultDisplay(cur);
+ const fromVal=comboMultDisplay(prev);
+ if(cur>prev)triggerComboMultPop(fromVal,toVal);
+ else triggerComboMultReset();
+}
+function updateComboMultChip(dt){
+ // Unscaled: called from frame() with real dt (independent of hitstop/freeze)
+ const c=comboMultChip;
+ if(c.state==='idle')return;
+ if(reduceMotion()){
+  c.state='idle';c.age=0;c.scale=1;c.tx=0;c.ghostA=0;c.sparks=0;c.ghost=null;
+  paintComboMultChip();return;
+ }
+ c.age+=dt;
+ if(c.state==='pop'){
+  const u=Math.min(1,c.age/COMBO_MULT_POP);
+  c.scale=.92+(.30)*easeOutCubic(u); // 0.92 → 1.22
+  c.ghostA=.7*(1-u);
+  c.sparks=1-u*.35;
+  c.tx=0;
+  if(u>=1){c.state='settle';c.age=0;c.scale=1.22;c.ghostA=0;c.sparks=.4}
+ }else if(c.state==='settle'){
+  const u=Math.min(1,c.age/COMBO_MULT_SETTLE);
+  // easeOutBack from overshoot 1.22 → 1.0
+  const e=easeOutBack(u);
+  c.scale=1.22+(1-1.22)*e;
+  c.ghostA=0;c.sparks=Math.max(0,.4*(1-u));c.tx=0;
+  if(u>=1){c.state='idle';c.age=0;c.scale=1;c.tx=0;c.sparks=0;c.ghost=null}
+ }else if(c.state==='reset'){
+  const u=Math.min(1,c.age/COMBO_MULT_RESET);
+  // One full left-right shake ±5px, no pop
+  c.scale=1;
+  c.tx=Math.sin(u*Math.PI*2)*COMBO_MULT_SHAKE_PX;
+  c.ghostA=0;c.sparks=0;
+  if(u>=1){c.state='idle';c.age=0;c.scale=1;c.tx=0}
+ }
+ paintComboMultChip();
+}
+function paintComboMultChip(){
+ const el=$('#combo-mult-chip');
+ if(!el)return;
+ const c=comboMultChip;
+ const rim=comboMultRim(c.value,c.state);
+ el.dataset.state=c.state;
+ el.dataset.rim=rim;
+ el.style.setProperty('--cm-scale',String(c.scale));
+ el.style.setProperty('--cm-tx',c.tx.toFixed(2)+'px');
+ el.style.setProperty('--cm-ghost',String(c.ghostA));
+ el.style.setProperty('--cm-sparks',String(c.sparks));
+ const valEl=el.querySelector('.combo-mult-val');
+ if(valEl)valEl.textContent='×'+c.value;
+ const ghostEl=el.querySelector('.combo-mult-ghost');
+ if(ghostEl)ghostEl.textContent=c.ghost!=null?'×'+c.ghost:'';
+ el.setAttribute('aria-label','연타 배율 ×'+c.value);
+}
+
+
 function drawSwingBatStroke(px,py,tipX,tipY,alpha=1){
  ctx.save();ctx.globalAlpha=alpha;ctx.lineCap='round';
  ctx.strokeStyle='#6e431b';ctx.lineWidth=11;
@@ -883,7 +985,7 @@ function drawAboveFingerGuide(){
  drawGuideChip(bandX-56,bandY-16,'접점',mint,a);
  drawGuideChip(bandX+58,bandY-10,'궤도',gold,a);
 }
-function start(mode='new'){if(!assetsReady)return;document.activeElement?.blur();activateAudio();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();clearInput();matchRecordStart={...records.data};if(mode!=='continue')fireCoachShown=false;perfectStreak=0;enableFtueIfNeeded(mode);if(mode==='continue')game.continueRun();else game.newRun();records.update(game.stage,game.perfects);effects=[];cheers=[];juiceFx=[];beatWarpQ=[];nearMissEdge=0;vulnToastDelay=0;whizzBusyUntil=0;batterPosHist=[];fireDodgeAfterimage=null;fingerGuideFade=0;fingerGuideClient=null;swingSmear=null;clearPitchSettleFidget();freeze=shake=flash=pitchPoseTime=bossImpact=0;flashTone='gold';camPunch=0;camPunchLife=0;phaseChunkLast=3;hidePhaseBanner();hideFirstFireIntroToast();$('#overlay').classList.add('hidden');say('공이 원에 오면 손을 떼세요','#e1f7d3',2.8);$('#pitchcall').textContent='';$('#pitchcall').classList.remove('aim-bait');previous=performance.now();hud()}
+function start(mode='new'){if(!assetsReady)return;document.activeElement?.blur();activateAudio();GameMusic.activate();GameMusic.setMuted(muted);GameMusic.startPlay();clearInput();matchRecordStart={...records.data};if(mode!=='continue')fireCoachShown=false;perfectStreak=0;enableFtueIfNeeded(mode);if(mode==='continue')game.continueRun();else game.newRun();records.update(game.stage,game.perfects);effects=[];cheers=[];juiceFx=[];beatWarpQ=[];nearMissEdge=0;vulnToastDelay=0;whizzBusyUntil=0;batterPosHist=[];fireDodgeAfterimage=null;fingerGuideFade=0;fingerGuideClient=null;swingSmear=null;clearPitchSettleFidget();freeze=shake=flash=pitchPoseTime=bossImpact=0;flashTone='gold';camPunch=0;camPunchLife=0;phaseChunkLast=3;hidePhaseBanner();hideFirstFireIntroToast();resetComboMultChip();$('#overlay').classList.add('hidden');say('공이 원에 오면 손을 떼세요','#e1f7d3',2.8);$('#pitchcall').textContent='';$('#pitchcall').classList.remove('aim-bait');previous=performance.now();hud()}
 function say(t,c='#ffdda0',duration=.85){$('#feedback').textContent=t;$('#feedback').style.color=c;$('#feedback').style.fontSize=t.length>14?'18px':'30px';feedbackTime=duration}
 function burst(x,y,color,n=15){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=45+Math.random()*180;effects.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:.3+Math.random()*.3,color})}}
 // Director juice helpers (VFX only — judgment/hitboxes untouched)
@@ -1294,6 +1396,7 @@ function hud(){
  $('#hearts').setAttribute('aria-label','체력 '+dh);
  $('#clock').textContent=Math.floor(game.time/60)+':'+String(Math.floor(game.time%60)).padStart(2,'0');
  $('#combo').innerHTML='<b>'+dc+'</b> COMBO';
+ syncComboMultChip();
  $('#pitchcount').textContent=game.pitchCount?game.pitchCount+'번째 투구':'첫 번째 승부';
  $('#hits').textContent='PERFECT '+dp;
  $('#ready').textContent=game.cooldown>0?'배트 회수 중':'스윙 준비';
@@ -2523,7 +2626,7 @@ function draw(){
  }
  drawNearMissVignette();
 }
-function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(ftueFade>0)ftueFade=Math.max(0,ftueFade-dt);if(ghostBatFade>0)ghostBatFade=Math.max(0,ghostBatFade-dt/.28);if(ghostBatSpark>0)ghostBatSpark=Math.max(0,ghostBatSpark-dt);if(swingSmear)updateSwingSmear(dt);updateBatterSettle(dt);updateHeedongHitJuice(dt);updateHudEase(dt);if(hudEaseActive())hud();if(pointer&&fingerGuideClient){syncFingerGuideThumb();fingerGuideFade=1}else if(fingerGuideFade>0)fingerGuideFade=Math.max(0,fingerGuideFade-dt/.12);if(game.state==='playing'){updateBeatWarpQ(dt);if(ftueActive){ftuePlayTime+=dt;if(ftuePlayTime>=30)dismissFtue()}let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(typeof game.setAimBaitSense==='function')game.setAimBaitSense({held:!!pointer,holdLock:holdLockOn(),lockX:game.player.x});if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();updateFireHazeFade(dt);sampleBatterPosHist();updateFireDodgeAfterimage(dt);updateFireDodgeWhizz();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';if(vulnToastDelay>0){vulnToastDelay-=dt;if(vulnToastDelay<=0){vulnToastDelay=0;say('약점 노출! · PERFECT ×1.2','#FFE09A',1.1)}}if(phaseBannerTime>0){phaseBannerTime-=dt;if(phaseBannerTime<=0)hidePhaseBanner()}callTime-=dt;if(callTime<=0){$('#pitchcall').textContent='';$('#pitchcall').classList.remove('aim-bait')}pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);if(camPunchLife>0){camPunchLife=Math.max(0,camPunchLife-dt);if(camPunchLife<=0)camPunch=0}for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0);updateJuice(dt)}else {if(beatWarpQ.length)updateBeatWarpQ(dt);if(juiceFx.length||nearMissEdge>0)updateJuice(dt)}if(vfxMoodEnabled()){if(cheers.length)updateCheers(dt)}else if(cheers.length)clearMoodLane();draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
+function frame(now){let dt=Math.min(.06,(now-previous)/1000||0);previous=now;visualTime+=dt;if(ftueFade>0)ftueFade=Math.max(0,ftueFade-dt);if(ghostBatFade>0)ghostBatFade=Math.max(0,ghostBatFade-dt/.28);if(ghostBatSpark>0)ghostBatSpark=Math.max(0,ghostBatSpark-dt);if(swingSmear)updateSwingSmear(dt);updateBatterSettle(dt);updateHeedongHitJuice(dt);updateHudEase(dt);updateComboMultChip(dt);if(hudEaseActive())hud();if(pointer&&fingerGuideClient){syncFingerGuideThumb();fingerGuideFade=1}else if(fingerGuideFade>0)fingerGuideFade=Math.max(0,fingerGuideFade-dt/.12);if(game.state==='playing'){updateBeatWarpQ(dt);if(ftueActive){ftuePlayTime+=dt;if(ftuePlayTime>=30)dismissFtue()}let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);if(pointer){dx=aim.x;dy=aim.y;if(Math.hypot(dx,dy)<5)dx=dy=0}if(typeof game.setAimBaitSense==='function')game.setAimBaitSense({held:!!pointer,holdLock:holdLockOn(),lockX:game.player.x});if(freeze>0)freeze-=dt;else {let remaining=dt;while(remaining>0){const step=Math.min(1/120,remaining);game.update(step,dx,dy);remaining-=step}}processEvents();updateFireHazeFade(dt);sampleBatterPosHist();updateFireDodgeAfterimage(dt);updateFireDodgeWhizz();feedbackTime-=dt;if(feedbackTime<=0)$('#feedback').textContent='';if(vulnToastDelay>0){vulnToastDelay-=dt;if(vulnToastDelay<=0){vulnToastDelay=0;say('약점 노출! · PERFECT ×1.2','#FFE09A',1.1)}}if(phaseBannerTime>0){phaseBannerTime-=dt;if(phaseBannerTime<=0)hidePhaseBanner()}callTime-=dt;if(callTime<=0){$('#pitchcall').textContent='';$('#pitchcall').classList.remove('aim-bait')}pitchPoseTime=Math.max(0,pitchPoseTime-dt);bossImpact=Math.max(0,bossImpact-dt);shake=Math.max(0,shake-dt);flash=Math.max(0,flash-dt);if(camPunchLife>0){camPunchLife=Math.max(0,camPunchLife-dt);if(camPunchLife<=0)camPunch=0}for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.t-=dt}effects=effects.filter(e=>e.t>0);updateJuice(dt)}else {if(beatWarpQ.length)updateBeatWarpQ(dt);if(juiceFx.length||nearMissEdge>0)updateJuice(dt)}if(vfxMoodEnabled()){if(cheers.length)updateCheers(dt)}else if(cheers.length)clearMoodLane();draw();requestAnimationFrame(frame)}hud();requestAnimationFrame(frame);
 if(document.modelContext?.registerTool){try{Promise.resolve(document.modelContext.registerTool({name:'read_baseball_game',description:'Read the current baseball parry match state.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({state:game.state,health:game.hp,bossHealth:game.boss,perfects:game.perfects,combo:game.combo,seconds:Math.floor(game.time)})})).catch(()=>{})}catch{}}
 
 function loadAsset(img,url){return new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error(url));img.src=url})}

@@ -622,3 +622,50 @@ footer>p{font-size:11px;color:#7191aa;margin:10px 0 0;opacity:.9}
  box-shadow:0 0 0 1px #FFAB8844,0 0 16px #FF986E55,0 6px 18px #0008;
  color:#FFC9A8;
 }
+
+
+/* Combo mult chip motion v1 — HUD only (design/refs/combo-mult-chip-motion-v1.md) */
+.combo-mult-chip{
+ position:relative;display:inline-flex;align-items:center;justify-content:center;
+ min-width:52px;height:32px;padding:0 12px;margin:0 0 4px 2px;
+ border-radius:10px;background:#081329e8;border:1.5px solid #FFE09A;
+ box-shadow:0 0 10px #FFE09A33,inset 0 0 0 1px #FFE09A22;
+ color:#FFE09A;font-size:18px;font-weight:1000;font-style:italic;letter-spacing:-.4px;
+ font-variant-numeric:tabular-nums;line-height:1;pointer-events:none;
+ transform:translateX(var(--cm-tx,0px)) scale(var(--cm-scale,1));
+ transform-origin:center center;will-change:transform;
+}
+.combo-mult-chip[data-rim="coral"]{
+ border-color:#FF986E;color:#FF986E;
+ box-shadow:0 0 12px #FF986E44,inset 0 0 0 1px #FF986E22;
+}
+.combo-mult-chip[data-rim="muted"]{
+ border-color:#6a7388;color:#8a93a3;
+ box-shadow:0 0 6px #0004,inset 0 0 0 1px #6a738822;
+ background:#0a1020e8;
+}
+.combo-mult-val{position:relative;z-index:2}
+.combo-mult-ghost{
+ position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(1.08);
+ font-size:18px;font-weight:1000;font-style:italic;color:#FFE09A;
+ opacity:var(--cm-ghost,0);pointer-events:none;z-index:1;white-space:nowrap;
+ text-shadow:0 0 8px #FFD25B55;
+}
+.combo-mult-sparks{
+ position:absolute;inset:-6px;pointer-events:none;opacity:var(--cm-sparks,0);z-index:3;
+}
+.combo-mult-sparks i{
+ position:absolute;width:4px;height:4px;border-radius:50%;background:#FFD25B;
+ box-shadow:0 0 6px #FFD25Baa;
+}
+.combo-mult-sparks i:nth-child(1){left:12%;top:8%}
+.combo-mult-sparks i:nth-child(2){right:10%;top:18%}
+.combo-mult-sparks i:nth-child(3){left:48%;bottom:4%}
+@media(max-height:690px){
+ .combo-mult-chip{min-width:44px;height:28px;padding:0 10px;font-size:15px}
+ .combo-mult-ghost{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){
+ .combo-mult-chip{transform:none !important;--cm-scale:1 !important;--cm-tx:0px !important;--cm-ghost:0 !important;--cm-sparks:0 !important}
+ .combo-mult-ghost,.combo-mult-sparks{opacity:0 !important}
+}
