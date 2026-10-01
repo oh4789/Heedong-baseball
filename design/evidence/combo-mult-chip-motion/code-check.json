@@ -1,0 +1,300 @@
+{
+  "commit": "171887cff9c10433093df05723e877f0e90603dd",
+  "short": "171887c",
+  "subject": "ui: combo mult chip motion v1",
+  "filesChanged": [
+    "game.js",
+    "index.html",
+    "style.css"
+  ],
+  "engineParentBlob": "8911e7e60e9d6cdb38efaaaebffb825f341758e2",
+  "engineCommitBlob": "8911e7e60e9d6cdb38efaaaebffb825f341758e2",
+  "engineIdentical": true,
+  "timings": {
+    "hotAt": 4,
+    "pop": 0.12,
+    "settle": 0.08,
+    "reset": 0.18,
+    "shakePx": 5
+  },
+  "checks": [
+    {
+      "id": "files-changed",
+      "pass": true,
+      "detail": "game.js,index.html,style.css"
+    },
+    {
+      "id": "engine-untouched",
+      "pass": true,
+      "detail": "8911e7e6===8911e7e6"
+    },
+    {
+      "id": "engine-no-diff-in-commit",
+      "pass": true,
+      "detail": "engine.js not in commit"
+    },
+    {
+      "id": "hot-at-4",
+      "pass": true,
+      "detail": "4"
+    },
+    {
+      "id": "pop-120ms",
+      "pass": true,
+      "detail": "0.12"
+    },
+    {
+      "id": "settle-80ms",
+      "pass": true,
+      "detail": "0.08"
+    },
+    {
+      "id": "reset-180ms",
+      "pass": true,
+      "detail": "0.18"
+    },
+    {
+      "id": "total-increase-200ms",
+      "pass": true,
+      "detail": "0.2"
+    },
+    {
+      "id": "shake-5px",
+      "pass": true,
+      "detail": "5"
+    },
+    {
+      "id": "has-pop-trigger",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "has-reset-trigger",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "has-sync",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "has-update",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "has-paint",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "pop-scale-092-122",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "settle-easeOutBack",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "reset-shake-sin",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "reset-no-pop-scale",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "sync-increase-pop",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "sync-decrease-reset",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "display-max1",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "rim-coral-ge-hot",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "rim-reset-muted",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "rim-default-cream",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "rm-pop-snap",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "rm-reset-snap",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "rm-update-snap",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "css-rm-media",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "hud-sync",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "frame-update",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "start-reset",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "html-chip",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "css-cream-border",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "css-coral-rim",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "css-muted-rim",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "css-transform-vars",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "no-score-formula-in-diff",
+      "pass": true,
+      "detail": "none"
+    },
+    {
+      "id": "engine-swing-untouched",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "sim-pop-on-increase",
+      "pass": true,
+      "detail": "pop"
+    },
+    {
+      "id": "sim-enter-settle",
+      "pass": true,
+      "detail": "settle"
+    },
+    {
+      "id": "sim-settle-idle",
+      "pass": true,
+      "detail": "idle"
+    },
+    {
+      "id": "sim-coral-at-4",
+      "pass": true,
+      "detail": "coral"
+    },
+    {
+      "id": "sim-rim-cream-at-3",
+      "pass": true,
+      "detail": "cream"
+    },
+    {
+      "id": "sim-reset-state",
+      "pass": true,
+      "detail": "reset"
+    },
+    {
+      "id": "sim-reset-muted",
+      "pass": true,
+      "detail": "muted"
+    },
+    {
+      "id": "sim-shake-peak",
+      "pass": true,
+      "detail": "tx=5"
+    },
+    {
+      "id": "sim-reset-done",
+      "pass": true,
+      "detail": "idle"
+    },
+    {
+      "id": "sim-rm-pop-snap",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "sim-rm-reset-snap",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "engine-whiff-breaks",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "engine-bodyhit-breaks",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "engine-pass-breaks",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "engine-hit-increments",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "unscaled-comment",
+      "pass": true,
+      "detail": "y"
+    },
+    {
+      "id": "update-outside-freeze",
+      "pass": true,
+      "detail": "before freeze gate"
+    }
+  ],
+  "pass": true,
+  "failed": [],
+  "checkedAt": "2026-10-01T10:21:00+09:00"
+}

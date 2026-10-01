@@ -2,6 +2,25 @@
 
 한눈에 보기: [디자인 갤러리](index.html) · 미러 https://oh4789.github.io/Heedong-baseball/ · 전체 개발로그 `/workspace/game-development-log.md`
 
+
+## 2026-10-01 — 연타 배율 칩 모션 · 보스 웨어·마일스톤 리서치
+
+### 개선
+- **연타 배율 칩 모션** 선적(`171887c`): Perfect/Good 연타 pop→settle · ×≥4 코랄 림 · Miss/피격/pass 시 ×1 뮤트+shake · reduce-motion 스냅 — QA **PASS**(engine 불변)
+- AM 리서치: 희동이 마운드 idle 강도 에스컬레이트 · 패배「한 호흡」인비트윈 · 릴리즈 스윙 시작 배트 후시(SFX) — 시안 PNG 없음
+- PM 리서치: HP 연동 피격 웨어 · 패배 페이즈 마일스톤 래더 · 윈드업 글러브 가죽 크릭(SFX) — 시안 PNG 없음
+- 디자인 AM/저녁: VFX 신규 시안 정지 유지(Perfect impact 큐 선적 전) — 레퍼런스만
+- **HARD 준수:** 월드 시프트·보드/플로드라이트·관중 치어·PB 델타·「바꿀 한 수」·한 호흡·idle 강도 재제안 금지(AM TOP는 이미 HARD화)
+
+### 에셋·자료
+- ✅ [연타 배율 칩 모션](assets/combo-mult-chip-motion-v1.png) · [스펙](refs/combo-mult-chip-motion-v1.md) · [QA 증거](evidence/combo-mult-chip-motion/REPORT.md)
+- ✅ [AM 아이디어](research/ideas-batch-20261001-am.md) · [PM 아이디어](research/ideas-batch-20261001-pm.md)
+- ✅ [AM/디자인/PM/저녁 레퍼](research/refs-20261001-am.md) · [design-am](research/refs-20261001-design-am.md) · [pm](research/refs-20261001-pm.md) · [evening](research/refs-20261001-design-evening.md)
+
+### 비고
+- 칩 모션은 HUD만. 판정·점수·engine 불변.
+- 오늘 리서치는 시안 없이 Director 검토용. Perfect impact 선적 전 VFX PNG 정지 유지.
+
 ## 2026-09-30 — 패배 개인 베스트 델타 · 리트라이/사운드 리서치
 
 ### 개선
