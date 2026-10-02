@@ -3,6 +3,22 @@
 한눈에 보기: [디자인 갤러리](index.html) · 미러 https://oh4789.github.io/Heedong-baseball/ · 전체 개발로그 `/workspace/game-development-log.md`
 
 
+## 2026-10-02 — 타석·리트라이·장비 웨어 리서치
+
+### 개선
+- AM 리서치: 배터 박스 dig-in/초크 웨어 · 「다시 승부」시각 기본값 넛지 · 재도전 배트-흙 탭(SFX) — 시안 PNG 없음
+- PM 리서치: 배트 그립/파인타르 웨어 · 제로세컨드 리셋 스매시인 · 투구 사이 플레이트 탭(SFX) — 시안 PNG 없음
+- 디자인 AM/저녁: VFX 신규 시안 정지 유지(Perfect impact 큐 선적 전) — 레퍼런스만
+- **HARD 준수:** 10/02 AM TOP(dig-in·CTA 넛지·배트-흙 탭) 재제안 금지 · 월드 시프트·near-win 밀도·채택 사운드 묶음 중복 금지
+
+### 에셋·자료
+- ✅ [AM 아이디어](research/ideas-batch-20261002-am.md) · [PM 아이디어](research/ideas-batch-20261002-pm.md)
+- ✅ [AM/디자인/PM/저녁 레퍼](research/refs-20261002-am.md) · [design-am](research/refs-20261002-design-am.md) · [pm](research/refs-20261002-pm.md) · [evening](research/refs-20261002-design-evening.md)
+
+### 비고
+- 오늘 리서치는 시안 없이 Director 검토용. Perfect impact 선적 전 VFX PNG 정지 유지.
+- AM dig-in·CTA 넛지·배트-흙 탭과 PM 그립 웨어·스매시인·플레이트 탭은 슬롯 분리(판정·점수·engine 불변).
+
 ## 2026-10-01 — 연타 배율 칩 모션 · 보스 웨어·마일스톤 리서치
 
 ### 개선
