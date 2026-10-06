@@ -3,6 +3,22 @@
 한눈에 보기: [디자인 갤러리](index.html) · 미러 https://oh4789.github.io/Heedong-baseball/ · 전체 개발로그 `/workspace/game-development-log.md`
 
 
+## 2026-10-05 — 열왜곡+잔상 P2 PASS · 개발 일시 중지
+
+### 개선
+- **불꽃 아지랑이·회피 잔상 P2** 선적(`632b1a8`): end/start에서 후광·잔상·히스토리 일괄 클리어 · 비행 불꽃 없을 때 스냅 prune · 시임 피크 반경 하한 유지 — QA **PASS**(engine·판정 불변)
+- AM 리서치: SFX 우선순위 리미터+BGM 덕킹 · 패배 결과 2단 공개 · 콤보 연동 하이햇 레이어 — 시안 PNG 없음
+- 디자인 AM/저녁: VFX 신규 시안 정지 유지 — 레퍼런스만(보스 등장 연출·노을 이중 조명 / 공유 카드·세이프 에어리어)
+- **사용자 지시로 개발 중지**: 공 비행 트레일 v1 착수 취소 · 재개 전까지 구현·QA·시안·조사 배정 없음
+
+### 에셋·자료
+- ✅ [P2 QA 증거](evidence/fire-haze-afterimage-p2/REPORT.md)
+- ✅ [AM 아이디어](research/ideas-batch-20261005-am.md) · [AM 레퍼](research/refs-20261005-am.md) · [design-am](research/refs-20261005-design-am.md) · [evening](research/refs-20261005-design-evening.md)
+
+### 비고
+- 마지막 선적은 `632b1a8`. 잔여: 일시정지 중 클리어 없음(start()에서 비움, 수정 안 함).
+- 10/03–10/04 신규 선적·시안 없음.
+
 ## 2026-10-02 — 타석·리트라이·장비 웨어 리서치
 
 ### 개선

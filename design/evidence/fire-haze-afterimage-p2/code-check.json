@@ -1,0 +1,52 @@
+{
+  "verdict": "PASS",
+  "commit": "632b1a8726f98aa277051dc02c1d5f3e6d34ed79",
+  "subject": "fix: clear haze/afterimage on end; keep haze radius floor",
+  "filesChanged": [
+    "game.js"
+  ],
+  "stat": "+16/-3",
+  "engineJudgmentScore": "unchanged",
+  "checklist": {
+    "1_end_start_clear": {
+      "pass": true,
+      "clears": [
+        "fireHazeFade",
+        "lastFireHazeSnap",
+        "fireDodgeAfterimage",
+        "batterPosHist"
+      ],
+      "callSites": [
+        "start L1000",
+        "end L1603"
+      ]
+    },
+    "2_prune_snap_if_no_live_fire": {
+      "pass": true,
+      "rule": "if fireHazeFade: keep; else if no ball type fire with !(t<0): lastFireHazeSnap=null",
+      "laterNormalHitRevivesGhost": false
+    },
+    "3_seam_outer_radius": {
+      "pass": true,
+      "formula": "outer = r + max(40, min(80, HAZE_ZONE_PX)) * 0.55",
+      "HAZE_ZONE_PX": 60,
+      "zone": 60,
+      "zoneTimes": 0.55,
+      "addedPx": 33,
+      "seamIntensityDim": 0.55,
+      "zoneShrink": false,
+      "r": [
+        8,
+        13
+      ],
+      "outerPx": [
+        41,
+        46
+      ],
+      "minOuterPx": 41,
+      "floorPx": 40,
+      "previousSeamOuterAtR8": 31.76
+    }
+  },
+  "residual": "pause/showStartMenu do not clear; haze/afterimage tick only while playing. Win/lose cleared in end(). Next run cleared in start()."
+}
